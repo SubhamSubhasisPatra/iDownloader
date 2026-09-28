@@ -1,0 +1,415 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		008C5C54061D23B5F09FD5E9 /* AddSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D32ECFE4BA8F5F4B6AD6359D /* AddSheet.swift */; };
+		10A49FA6BE0275CA6F555329 /* iDownloaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4768E984B096140D214EF41E /* iDownloaderApp.swift */; };
+		1805E17B79FCFF34E6F333B1 /* TaskListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE939C2808946E0F053DCE33 /* TaskListView.swift */; };
+		2AA7C031AFC0453394573C11 /* TaskRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4502A05D9EB3700FD6ABAF /* TaskRow.swift */; };
+		4A99BD0AAE8A69A3DDC83BA7 /* GitHubProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE98CA982C638EBC5652B9A /* GitHubProxy.swift */; };
+		570DC99839F62DBD4654AF42 /* Format.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17960B400383E5EA43D87B05 /* Format.swift */; };
+		5A053C1DD79686FC47DF4CFD /* TaskPropertiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4294016A513AD4E360DC475 /* TaskPropertiesView.swift */; };
+		6D6464451FDF2D83DC062CDA /* SwiftTorrent in Frameworks */ = {isa = PBXBuildFile; productRef = 61093E23003A59A8A62AB24B /* SwiftTorrent */; };
+		7B865813B02DB60B21AC20B5 /* Category.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C09849333DFB5AC18B4D7C8 /* Category.swift */; };
+		7DD516AE29CBEDFFC248885E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 86416FEDBFF710E7D9210105 /* Assets.xcassets */; };
+		88CCFE1C39A3C1CE7CE35A17 /* TaskService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75375480B6DE6FCDBBD9B9B3 /* TaskService.swift */; };
+		90797B2FFB67A0C1E53F5E2A /* TasksPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73ED4F4903AAB3E48390A3B5 /* TasksPage.swift */; };
+		B86879750348FA3E44B83340 /* TaskRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CDEF462916BA35029BE4FCC /* TaskRecord.swift */; };
+		BE458CE9189157FDFAD218C1 /* DownloadRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E040C4CF434DB27D2524BB4 /* DownloadRun.swift */; };
+		CEE63E8DF901F5C0D350D375 /* SettingsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46AE00E0EF4431751211D779 /* SettingsPage.swift */; };
+		D506CF95260BDECEFF01BFF5 /* TorrentRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43E91377F99185AB575979D9 /* TorrentRun.swift */; };
+		EE06CE5B91D41643487339BA /* Paths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1FC823481B1E9F3A2C8892 /* Paths.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		17960B400383E5EA43D87B05 /* Format.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Format.swift; sourceTree = "<group>"; };
+		1C1FC823481B1E9F3A2C8892 /* Paths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Paths.swift; sourceTree = "<group>"; };
+		3E040C4CF434DB27D2524BB4 /* DownloadRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadRun.swift; sourceTree = "<group>"; };
+		43E91377F99185AB575979D9 /* TorrentRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentRun.swift; sourceTree = "<group>"; };
+		46AE00E0EF4431751211D779 /* SettingsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPage.swift; sourceTree = "<group>"; };
+		4768E984B096140D214EF41E /* iDownloaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iDownloaderApp.swift; sourceTree = "<group>"; };
+		4FE98CA982C638EBC5652B9A /* GitHubProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubProxy.swift; sourceTree = "<group>"; };
+		73ED4F4903AAB3E48390A3B5 /* TasksPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksPage.swift; sourceTree = "<group>"; };
+		75375480B6DE6FCDBBD9B9B3 /* TaskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskService.swift; sourceTree = "<group>"; };
+		86416FEDBFF710E7D9210105 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8CDEF462916BA35029BE4FCC /* TaskRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRecord.swift; sourceTree = "<group>"; };
+		9C09849333DFB5AC18B4D7C8 /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
+		BDCB0DBD5C60776A780FB126 /* iDownloader.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iDownloader.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BE939C2808946E0F053DCE33 /* TaskListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskListView.swift; sourceTree = "<group>"; };
+		C4294016A513AD4E360DC475 /* TaskPropertiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPropertiesView.swift; sourceTree = "<group>"; };
+		CB7960EF9983F619BF5C4259 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		D32ECFE4BA8F5F4B6AD6359D /* AddSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSheet.swift; sourceTree = "<group>"; };
+		FD4502A05D9EB3700FD6ABAF /* TaskRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRow.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B9726D29DE1FCAFBBFB5B2DD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6D6464451FDF2D83DC062CDA /* SwiftTorrent in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2CD7600A9B146359B5AF5DAF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BDCB0DBD5C60776A780FB126 /* iDownloader.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		316BD3CA21F7847C6B623EC4 /* view */ = {
+			isa = PBXGroup;
+			children = (
+				D32ECFE4BA8F5F4B6AD6359D /* AddSheet.swift */,
+				46AE00E0EF4431751211D779 /* SettingsPage.swift */,
+				BE939C2808946E0F053DCE33 /* TaskListView.swift */,
+				C4294016A513AD4E360DC475 /* TaskPropertiesView.swift */,
+				FD4502A05D9EB3700FD6ABAF /* TaskRow.swift */,
+				73ED4F4903AAB3E48390A3B5 /* TasksPage.swift */,
+			);
+			path = view;
+			sourceTree = "<group>";
+		};
+		4641369D869E6BF3FC5EFEAC = {
+			isa = PBXGroup;
+			children = (
+				E3281FC3AFDDAAB8FD45FBFD /* App */,
+				2CD7600A9B146359B5AF5DAF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A6EE528B294A03A5B0A5FA21 /* engine */ = {
+			isa = PBXGroup;
+			children = (
+				9C09849333DFB5AC18B4D7C8 /* Category.swift */,
+				3E040C4CF434DB27D2524BB4 /* DownloadRun.swift */,
+				17960B400383E5EA43D87B05 /* Format.swift */,
+				4FE98CA982C638EBC5652B9A /* GitHubProxy.swift */,
+				1C1FC823481B1E9F3A2C8892 /* Paths.swift */,
+				8CDEF462916BA35029BE4FCC /* TaskRecord.swift */,
+				75375480B6DE6FCDBBD9B9B3 /* TaskService.swift */,
+				43E91377F99185AB575979D9 /* TorrentRun.swift */,
+			);
+			path = engine;
+			sourceTree = "<group>";
+		};
+		E3281FC3AFDDAAB8FD45FBFD /* App */ = {
+			isa = PBXGroup;
+			children = (
+				86416FEDBFF710E7D9210105 /* Assets.xcassets */,
+				4768E984B096140D214EF41E /* iDownloaderApp.swift */,
+				CB7960EF9983F619BF5C4259 /* Info.plist */,
+				A6EE528B294A03A5B0A5FA21 /* engine */,
+				316BD3CA21F7847C6B623EC4 /* view */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7A19545148ABD39778987A5B /* iDownloader */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 457A749B8DD2DCBECF6BBA48 /* Build configuration list for PBXNativeTarget "iDownloader" */;
+			buildPhases = (
+				0EE2E0D504E2B098CD2482D9 /* Sources */,
+				32D6C92E13A9EFEE86F3FDA6 /* Resources */,
+				B9726D29DE1FCAFBBFB5B2DD /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iDownloader;
+			packageProductDependencies = (
+				61093E23003A59A8A62AB24B /* SwiftTorrent */,
+			);
+			productName = iDownloader;
+			productReference = BDCB0DBD5C60776A780FB126 /* iDownloader.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		159ED9F7357B69402ECF5EF9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = C926587CB9DB653035BA5B64 /* Build configuration list for PBXProject "iDownloader" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 4641369D869E6BF3FC5EFEAC;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				696E1D99BEDB099872B8196C /* XCRemoteSwiftPackageReference "swift-torrent" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2CD7600A9B146359B5AF5DAF /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7A19545148ABD39778987A5B /* iDownloader */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		32D6C92E13A9EFEE86F3FDA6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7DD516AE29CBEDFFC248885E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0EE2E0D504E2B098CD2482D9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				008C5C54061D23B5F09FD5E9 /* AddSheet.swift in Sources */,
+				7B865813B02DB60B21AC20B5 /* Category.swift in Sources */,
+				BE458CE9189157FDFAD218C1 /* DownloadRun.swift in Sources */,
+				570DC99839F62DBD4654AF42 /* Format.swift in Sources */,
+				4A99BD0AAE8A69A3DDC83BA7 /* GitHubProxy.swift in Sources */,
+				EE06CE5B91D41643487339BA /* Paths.swift in Sources */,
+				CEE63E8DF901F5C0D350D375 /* SettingsPage.swift in Sources */,
+				1805E17B79FCFF34E6F333B1 /* TaskListView.swift in Sources */,
+				5A053C1DD79686FC47DF4CFD /* TaskPropertiesView.swift in Sources */,
+				B86879750348FA3E44B83340 /* TaskRecord.swift in Sources */,
+				2AA7C031AFC0453394573C11 /* TaskRow.swift in Sources */,
+				88CCFE1C39A3C1CE7CE35A17 /* TaskService.swift in Sources */,
+				90797B2FFB67A0C1E53F5E2A /* TasksPage.swift in Sources */,
+				D506CF95260BDECEFF01BFF5 /* TorrentRun.swift in Sources */,
+				10A49FA6BE0275CA6F555329 /* iDownloaderApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		2A0EEAB2BBACBAAA5D92F557 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 2;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 5.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3472933408671D00F6906769 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.xychr.ghostdownloader.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		586FC4720FB37D4D6F192E35 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.xychr.ghostdownloader.ios;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		60CD68E12DC2C9408F953DD1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 2;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 5.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		457A749B8DD2DCBECF6BBA48 /* Build configuration list for PBXNativeTarget "iDownloader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				586FC4720FB37D4D6F192E35 /* Debug */,
+				3472933408671D00F6906769 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C926587CB9DB653035BA5B64 /* Build configuration list for PBXProject "iDownloader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2A0EEAB2BBACBAAA5D92F557 /* Debug */,
+				60CD68E12DC2C9408F953DD1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		696E1D99BEDB099872B8196C /* XCRemoteSwiftPackageReference "swift-torrent" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/warppipe/swift-torrent";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		61093E23003A59A8A62AB24B /* SwiftTorrent */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 696E1D99BEDB099872B8196C /* XCRemoteSwiftPackageReference "swift-torrent" */;
+			productName = SwiftTorrent;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 159ED9F7357B69402ECF5EF9 /* Project object */;
+}

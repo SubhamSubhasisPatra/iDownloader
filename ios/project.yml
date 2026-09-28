@@ -1,0 +1,48 @@
+name: iDownloader
+options:
+  bundleIdPrefix: com.xychr
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  SwiftTorrent:
+    url: https://github.com/warppipe/swift-torrent
+    branch: main
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "5.1.0"
+    CURRENT_PROJECT_VERSION: "2"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    SUPPORTS_MACCATALYST: YES
+    DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: YES
+targets:
+  iDownloader:
+    type: application
+    platform: iOS
+    sources:
+      - App
+    dependencies:
+      - package: SwiftTorrent
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.xychr.ghostdownloader.ios
+        INFOPLIST_FILE: App/Info.plist
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: iDownloader
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        ITSAppUsesNonExemptEncryption: false
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
