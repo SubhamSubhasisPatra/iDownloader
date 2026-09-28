@@ -5,6 +5,7 @@
 Seam S13a: 范围正确性（无重叠、无间隙）
 Seam S13c: 服务器降级（200-for-range、403）
 Seam S13e: 请求构造（_effectiveHeaders 一致性）
+Seam S13h: 连接复用（keep-alive 连接池）
 """
 from __future__ import annotations
 
@@ -640,30 +641,29 @@ class TestStallRecovery:
         assert hasStalled
         releaseHang.set()
 
-    async def test_dead_client_retries_on_a_new_one(self, server, tmp_path, monkeypatch):
-        """A client that cannot fetch is closed, and the next attempt finishes the file on a new one."""
+    async def test_dead_connection_retries_on_shared_client(self, server, tmp_path, monkeypatch):
+        """A failed range request retries on the shared pooled client, which is closed once at the end."""
         content = buildFileContent(500)
-        firstAttempt = True
+        realClient = realBuildClient()
+        hasFailed = False
 
-        class DeadClient:
+        class FlakyClient:
             isClosed = False
 
-            async def get(self, *args, **kwargs):
-                raise ConnectionError("dead connection")
+            async def get(self, url, **kwargs):
+                nonlocal hasFailed
+                if "timeout" not in kwargs and not hasFailed:
+                    hasFailed = True
+                    raise ConnectionError("dead connection")
+                return await realClient.get(url, **kwargs)
 
             def close(self):
                 self.isClosed = True
+                realClient.close()
 
-        deadClient = DeadClient()
+        flakyClient = FlakyClient()
 
-        def buildClient(**kwargs):
-            nonlocal firstAttempt
-            if kwargs.get("readTimeout") is not None and firstAttempt:
-                firstAttempt = False
-                return deadClient
-            return realBuildClient(**kwargs)
-
-        monkeypatch.setattr("features.http_pack.task.buildClient", buildClient)
+        monkeypatch.setattr("features.http_pack.task.buildClient", lambda **kwargs: flakyClient)
 
         _real_sleep = asyncio.sleep
 
@@ -679,7 +679,8 @@ class TestStallRecovery:
         await asyncio.wait_for(runStep(step), timeout=10)
 
         assert (tmp_path / "test.bin").read_bytes() == content
-        assert deadClient.isClosed
+        assert hasFailed
+        assert flakyClient.isClosed
 
 
 class TestInitialStart:
@@ -704,6 +705,53 @@ class TestInitialStart:
 
         assert (tmp_path / "test.bin").read_bytes() == content
         assert requestTimes[3] - requestTimes[0] < 0.5
+
+
+# ── S13h: Connection reuse ──
+
+
+class TestConnectionReuse:
+
+    async def test_range_requests_reuse_pooled_connections(self, server, tmp_path):
+        """Probe, initial ranges and post-steal ranges ride shared keep-alive connections
+        instead of one fresh TCP+TLS connection per request (IDM-style reuse)."""
+        content = buildFileContent(4_000_000)
+        requestPeers: list[int] = []
+
+        async def countingRangeHandler(request: web.Request) -> web.Response:
+            requestPeers.append(request.transport.get_extra_info("peername")[1])
+            rangeHeader = request.headers.get("Range")
+            if rangeHeader is None:
+                return web.Response(
+                    body=content,
+                    headers={"Content-Length": str(len(content)), "Accept-Ranges": "bytes"},
+                )
+            rangeSpec = rangeHeader.replace("bytes=", "")
+            parts = rangeSpec.split("-")
+            start = int(parts[0])
+            end = int(parts[1]) if parts[1] else len(content) - 1
+            body = content[start:end + 1]
+            return web.Response(
+                status=206,
+                body=body,
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{len(content)}",
+                    "Content-Length": str(len(body)),
+                },
+            )
+
+        url = await server(countingRangeHandler)
+        task, step = makeStep(url, tmp_path, fileSize=4_000_000, subworkerCount=2)
+        task.setStatus(TaskStatus.RUNNING)
+
+        await runStep(step)
+
+        assert (tmp_path / "test.bin").read_bytes() == content
+        # probe + 2 initial ranges + at least one post-steal range
+        assert len(requestPeers) >= 4
+        assert len(set(requestPeers)) < len(requestPeers), (
+            f"every request opened its own connection: {requestPeers}"
+        )
 
 
 if __name__ == "__main__":

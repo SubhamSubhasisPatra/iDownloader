@@ -30,12 +30,15 @@ public actor TorrentHandle {
     private var uploadRate: Double = 0
     private var reannounceTask: Task<Void, Never>?
     private var downloadMonitorTask: Task<Void, Never>?
+    private var dhtTask: Task<Void, Never>?
     private var metadataExchange: MetadataExchange?
     private var metadataContinuations: [UInt64: CheckedContinuation<TorrentInfo, Error>] = [:]
     private var completionContinuations: [UInt64: CheckedContinuation<Void, Error>] = [:]
     private var nextWaitID: UInt64 = 0
+    private let dhtNode: DHTNode?
 
-    public init(params: AddTorrentParams, settings: SessionSettings, group: EventLoopGroup) {
+    public init(params: AddTorrentParams, settings: SessionSettings, group: EventLoopGroup,
+                dhtNode: DHTNode? = nil) {
         let hash = params.infoHash!
         self.infoHash = hash
         self.info = params.torrentInfo
@@ -43,6 +46,7 @@ public actor TorrentHandle {
         self.savePath = params.savePath ?? settings.savePath
         self.peerID = generatePeerID()
         self.group = group
+        self.dhtNode = dhtNode
         self.peerManager = PeerManager(
             infoHash: hash.bytes, peerID: peerID, group: group,
             maxConnections: settings.maxConnectionsPerTorrent
@@ -114,6 +118,26 @@ public actor TorrentHandle {
             await announceToAllTrackers(trackerMgr: trackerMgr, params: params)
             startReannounceLoop(trackerMgr: trackerMgr)
         }
+
+        startDHTLoop()
+    }
+
+    /// Periodic DHT get_peers lookup: on thin swarms trackers alone miss most leeches.
+    private func startDHTLoop() {
+        guard let dhtNode else { return }
+        dhtTask?.cancel()
+        dhtTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { break }
+                let traversal = DHTTraversal(dhtNode: dhtNode)
+                if let peers = try? await traversal.getPeers(infoHash: self.infoHash) {
+                    for (address, port) in peers {
+                        await self.peerManager.addPeer(address: address, port: port)
+                    }
+                }
+                try? await Task.sleep(for: .seconds(90))
+            }
+        }
     }
 
     private func onMetadataReceived(info: TorrentInfo) async {
@@ -141,6 +165,7 @@ public actor TorrentHandle {
                     break
                 }
                 await self.peerManager.checkTimeouts()
+                await self.peerManager.pexTick()
             }
         }
     }
@@ -207,6 +232,12 @@ public actor TorrentHandle {
         state = .paused
         reannounceTask?.cancel()
         downloadMonitorTask?.cancel()
+        dhtTask?.cancel()
+    }
+
+    /// Removes this torrent's own files (its savePath), not the session-wide save root.
+    public func deleteFiles() async {
+        try? FileManager.default.removeItem(atPath: savePath)
     }
 
     /// Resume the torrent.

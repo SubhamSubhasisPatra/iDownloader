@@ -47,15 +47,31 @@ final class SegmentPool {
         let end: Int64
         private let lock = NSLock()
         private var _written: Int = 0
+        private var _effectiveEnd: Int64
 
         init(start: Int64, end: Int64) {
             self.start = start
             self.end = end
+            self._effectiveEnd = end
         }
 
         var written: Int {
             get { lock.lock(); defer { lock.unlock() }; return _written }
             set { lock.lock(); _written = newValue; lock.unlock() }
+        }
+
+        /// IDM-style slow-connection stealing shrinks this; the tail beyond it
+        /// returns to the pool for a faster connection.
+        var effectiveEnd: Int64 {
+            get { lock.lock(); defer { lock.unlock() }; return _effectiveEnd }
+            set { lock.lock(); _effectiveEnd = newValue; lock.unlock() }
+        }
+
+        /// Bytes of this claim not yet downloaded.
+        var remainingBytes: Int64 {
+            lock.lock()
+            defer { lock.unlock() }
+            return _effectiveEnd - start - Int64(_written)
         }
 
         var expectedLength: Int64 { end - start + 1 }
@@ -66,6 +82,8 @@ final class SegmentPool {
     private var done: [ByteRange]       // merged, sorted, completed byte ranges
     private var unclaimed: [ByteRange]  // ranges nobody is working on
     private var claims: [Claim] = []
+    private var claimsByWorker: [Int: Claim?] = [:]
+    private var retiredWorkers: Set<Int> = []
     private let minChunk: Int64 = 1 << 20
     private let maxChunk: Int64 = 16 << 20
 
@@ -76,10 +94,14 @@ final class SegmentPool {
     }
 
     /// Claims the next chunk of work. Returns nil while the pool is momentarily
-    /// empty but other connections may still return ranges.
-    func take(activeWorkers: Int) -> Claim? {
+    /// empty but other connections may still return ranges. Retired (slow) workers
+    /// get nothing: their throughput drags the end game.
+    func take(worker: Int, activeWorkers: Int) -> Claim? {
         lock.lock()
         defer { lock.unlock() }
+        if retiredWorkers.contains(worker) {
+            return nil
+        }
 
         guard let index = unclaimed.indices.max(by: { unclaimed[$0].length < unclaimed[$1].length }) else {
             return nil
@@ -100,9 +122,12 @@ final class SegmentPool {
     }
 
     /// Merges the written prefix of a claim into the completed map and returns the
-    /// rest of the claim to the pool. Called on completion, failure and pause.
-    func finish(_ claim: Claim) {
+    /// rest (up to the claim's current effective end) to the pool. Called on
+    /// completion, failure, pause and after a steal.
+    func finish(_ worker: Int, _ claim: Claim) {
         let written = claim.written
+        let effectiveEnd = claim.effectiveEnd
+        claimsByWorker[worker] = nil
         lock.lock()
         defer { lock.unlock() }
         claims.removeAll { $0 === claim }
@@ -111,9 +136,73 @@ final class SegmentPool {
             mergeIntoDone(ByteRange(start: claim.start, end: claim.start + Int64(written) - 1))
         }
         let restStart = claim.start + Int64(written)
-        if restStart <= claim.end {
-            unclaimed.append(ByteRange(start: restStart, end: claim.end))
+        if restStart <= effectiveEnd {
+            unclaimed.append(ByteRange(start: restStart, end: effectiveEnd))
         }
+    }
+
+    /// IDM-style slow-connection stealing: shrinks the claim's effective end so the
+    /// slow connection keeps only half of what is left; the other half goes back to
+    /// the pool. Returns false when there is not enough left to bother.
+    func steal(_ claim: Claim) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return stealLocked(claim)
+    }
+
+
+    var activeClaims: [Claim] {
+        lock.lock()
+        defer { lock.unlock() }
+        return claims
+    }
+
+    var activeClaimsByWorker: [(worker: Int, claim: SegmentPool.Claim)] {
+        lock.lock()
+        defer { lock.unlock() }
+        var result: [(worker: Int, claim: SegmentPool.Claim)] = []
+        for (worker, claim) in claimsByWorker {
+            if let claim {
+                result.append((worker, claim))
+            }
+        }
+        return result
+    }
+
+    /// Registers which claim a worker is streaming (nil when between chunks).
+    func setWorkerClaim(_ worker: Int, _ claim: Claim?) {
+        lock.lock()
+        defer { lock.unlock() }
+        claimsByWorker[worker] = claim
+    }
+
+    /// The monitor retires workers measured far below the fastest connection;
+    /// at least two connections always stay active.
+    func updateWorkerRate(_ worker: Int, rate: Double, fastest: Double) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard fastest > 0, rate < fastest * 0.25,
+              claimsByWorker.filter { $0.value != nil }.count - retiredWorkers.count > 2 else { return false }
+        if retiredWorkers.insert(worker).inserted {
+            if let claim = claimsByWorker[worker], let unwrapped = claim {
+                stealLocked(unwrapped)
+            }
+            return true
+        }
+        return false
+    }
+
+    @discardableResult
+    private func stealLocked(_ claim: Claim) -> Bool {
+        let remaining = claim.remainingBytes
+        guard remaining > 512 << 10 else { return false }
+        let keep = max(256 << 10, remaining / 2)
+        let newEnd = claim.start + Int64(claim.written) + keep - 1
+        let oldEnd = claim.effectiveEnd
+        guard newEnd < oldEnd else { return false }
+        claim.effectiveEnd = newEnd
+        unclaimed.append(ByteRange(start: newEnd + 1, end: oldEnd))
+        return true
     }
 
     /// Completed bytes (excluding in-flight claims).
@@ -308,10 +397,42 @@ actor DownloadRun: TaskRun {
         }
         defer { persistTask.cancel() }
 
+        // IDM's slow-connection handling, two layers:
+        // 1. steal: a connection far below the fastest hands half of its remaining
+        //    range back to the pool every second;
+        // 2. retire: persistently slow connections stop receiving work entirely so
+        //    the end game is split among fast connections only.
+        let stealMonitor = Task {
+            var history: [Int: (written: Int, at: ContinuousClock.Instant)] = [:]
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                let now = ContinuousClock.now
+                let pairs = pool.activeClaimsByWorker
+                var rates: [Int: Double] = [:]
+                for (worker, claim) in pairs {
+                    if let previous = history[worker] {
+                        let elapsed = now - previous.at
+                        let seconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
+                        if seconds > 0 {
+                            rates[worker] = Double(claim.written - previous.written) / seconds
+                        }
+                    }
+                    history[worker] = (claim.written, now)
+                }
+                guard let fastest = rates.values.max(), fastest > 0 else { continue }
+                for (worker, rate) in rates where rate < fastest * 0.25 {
+                    if pool.updateWorkerRate(worker, rate: rate, fastest: fastest) {
+                        history[worker] = nil
+                    }
+                }
+            }
+        }
+        defer { stealMonitor.cancel() }
+
         try await withThrowingTaskGroup(of: Void.self) { group in
-            for _ in 0..<workerCount {
+            for worker in 0..<workerCount {
                 group.addTask { [url] in
-                    try await self.workerLoop(pool, self.httpCoordinator, folder, url, etag, workerCount)
+                    try await self.workerLoop(worker, pool, self.httpCoordinator, folder, url, etag, workerCount)
                 }
             }
             try await group.waitForAll()
@@ -328,7 +449,7 @@ actor DownloadRun: TaskRun {
 
     // MARK: - Workers
 
-    private func workerLoop(_ pool: SegmentPool, _ coordinator: SegmentCoordinator,
+    private func workerLoop(_ worker: Int, _ pool: SegmentPool, _ coordinator: SegmentCoordinator,
                             _ folder: URL, _ url: URL, _ etag: String?, _ workerCount: Int) async throws {
         let dataURL = folder.appending(path: "data")
         let handle = try FileHandle(forWritingTo: dataURL)
@@ -337,16 +458,17 @@ actor DownloadRun: TaskRun {
         var transientErrors = 0
         while true {
             try Task.checkCancellation()
-            guard let claim = pool.take(activeWorkers: workerCount) else {
+            guard let claim = pool.take(worker: worker, activeWorkers: workerCount) else {
                 if pool.outstandingClaims == 0 {
                     return
                 }
                 try await Task.sleep(for: .milliseconds(200))
                 continue
             }
+            pool.setWorkerClaim(worker, claim)
             do {
                 let complete = try await downloadRange(claim, httpCoordinator, handle, url, etag)
-                pool.finish(claim)
+                pool.finish(worker, claim)
                 if complete {
                     transientErrors = 0
                 } else {
@@ -358,7 +480,7 @@ actor DownloadRun: TaskRun {
                     }
                 }
             } catch {
-                pool.finish(claim)
+                pool.finish(worker, claim)
                 if Task.isCancelled {
                     throw CancellationError()
                 }
@@ -376,14 +498,15 @@ actor DownloadRun: TaskRun {
     private func downloadRange(_ claim: SegmentPool.Claim, _ coordinator: SegmentCoordinator,
                                _ handle: FileHandle, _ url: URL, _ etag: String?) async throws -> Bool {
         let offset = claim.start + Int64(claim.written)
-        let expected = claim.end - offset + 1
+        let endAtRequest = claim.effectiveEnd
+        let expected = endAtRequest - offset + 1
         if expected <= 0 {
             return true
         }
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 30
-        request.setValue("bytes=\(offset)-\(claim.end)", forHTTPHeaderField: "Range")
+        request.setValue("bytes=\(offset)-\(endAtRequest)", forHTTPHeaderField: "Range")
         // No transparent compression: byte ranges and progress count raw bytes only.
         request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
         if let etag {
@@ -398,7 +521,7 @@ actor DownloadRun: TaskRun {
             try await withTaskCancellationHandler {
                 try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                     coordinator.register(taskIdentifier: task.taskIdentifier, handle: handle,
-                                         startOffset: offset, claim: claim, counter: counter,
+                                         startOffset: offset, claim: claim, counter: counter, task: task,
                                          continuation: continuation)
                     task.resume()
                 }
@@ -409,7 +532,7 @@ actor DownloadRun: TaskRun {
             coordinator.abandon(taskIdentifier: task.taskIdentifier)
             throw error
         }
-        return Int64(claim.written) >= claim.expectedLength
+        return Int64(claim.written) >= claim.effectiveEnd - claim.start
     }
 
     /// Moves the finished staged file into Documents under a unique name.
@@ -521,6 +644,9 @@ final class SegmentCoordinator: NSObject, URLSessionDataDelegate, @unchecked Sen
         let expects206: Bool
         var continuation: CheckedContinuation<Void, Error>?
         var failure: Error?
+        // Set when this connection cancels itself because a steal shrank its
+        // range: the partial data is complete and valid, not a pause.
+        var selfCancelled = false
 
         init(onWrite: @escaping @Sendable (Data) throws -> Void,
              expects206: Bool,
@@ -535,14 +661,28 @@ final class SegmentCoordinator: NSObject, URLSessionDataDelegate, @unchecked Sen
     private var boxes: [Int: TaskBox] = [:]
 
     func register(taskIdentifier: Int, handle: FileHandle, startOffset: Int64,
-                  claim: SegmentPool.Claim, counter: ByteCounter,
+                  claim: SegmentPool.Claim, counter: ByteCounter, task: URLSessionDataTask,
                   continuation: CheckedContinuation<Void, Error>) {
-        registerBox(taskIdentifier: taskIdentifier, expects206: true, continuation: continuation) { data in
-            try handle.seek(toFileOffset: UInt64(startOffset + Int64(claim.written)))
+        registerBox(taskIdentifier: taskIdentifier, expects206: true, continuation: continuation) { [weak claim] data in
+            try handle.seek(toFileOffset: UInt64(startOffset + Int64(claim?.written ?? 0)))
             try handle.write(contentsOf: data)
-            claim.written += data.count
+            claim?.written += data.count
             counter.add(Int64(data.count))
+            // Steal boundary reached: stop pulling bytes that now belong to
+            // another connection and report success with the valid prefix.
+            if let claim, startOffset + Int64(claim.written) > claim.effectiveEnd {
+                if let box = self.boxFor(taskIdentifier) {
+                    box.selfCancelled = true
+                }
+                task.cancel()
+            }
         }
+    }
+
+    private func boxFor(_ taskIdentifier: Int) -> TaskBox? {
+        lock.lock()
+        defer { lock.unlock() }
+        return boxes[taskIdentifier]
     }
 
     func registerSingleStream(taskIdentifier: Int, handle: FileHandle, counter: ByteCounter,
@@ -616,6 +756,8 @@ final class SegmentCoordinator: NSObject, URLSessionDataDelegate, @unchecked Sen
         guard let box = take(task.taskIdentifier) else { return }
         if let failure = box.failure {
             box.continuation?.resume(throwing: failure)
+        } else if let error = error as? URLError, error.code == .cancelled, box.selfCancelled {
+            box.continuation?.resume()
         } else if let error = error as? URLError, error.code == .cancelled {
             box.continuation?.resume(throwing: CancellationError())
         } else if let error {

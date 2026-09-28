@@ -12,6 +12,8 @@ actor TorrentEngine {
         var settings = SessionSettings(
             savePath: Paths.appSupport.appending(path: "BTFiles", directoryHint: .isDirectory).path
         )
+        settings.maxConnections = 400
+        settings.maxConnectionsPerTorrent = 120
         settings.dhtEnabled = dhtEnabled
         settings.downloadRateLimit = limitKbps > 0 ? limitKbps * 1024 : 0
         return settings

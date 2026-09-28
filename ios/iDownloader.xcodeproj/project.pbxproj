@@ -12,6 +12,7 @@
 		1805E17B79FCFF34E6F333B1 /* TaskListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE939C2808946E0F053DCE33 /* TaskListView.swift */; };
 		2AA7C031AFC0453394573C11 /* TaskRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4502A05D9EB3700FD6ABAF /* TaskRow.swift */; };
 		4A99BD0AAE8A69A3DDC83BA7 /* GitHubProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE98CA982C638EBC5652B9A /* GitHubProxy.swift */; };
+		518450A9357A178A755BF184 /* TaskRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = A194F9B7CE8AA5EC97263613 /* TaskRun.swift */; };
 		570DC99839F62DBD4654AF42 /* Format.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17960B400383E5EA43D87B05 /* Format.swift */; };
 		5A053C1DD79686FC47DF4CFD /* TaskPropertiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4294016A513AD4E360DC475 /* TaskPropertiesView.swift */; };
 		6D6464451FDF2D83DC062CDA /* SwiftTorrent in Frameworks */ = {isa = PBXBuildFile; productRef = 61093E23003A59A8A62AB24B /* SwiftTorrent */; };
@@ -39,6 +40,8 @@
 		86416FEDBFF710E7D9210105 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8CDEF462916BA35029BE4FCC /* TaskRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRecord.swift; sourceTree = "<group>"; };
 		9C09849333DFB5AC18B4D7C8 /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
+		A194F9B7CE8AA5EC97263613 /* TaskRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRun.swift; sourceTree = "<group>"; };
+		B3E51B3667060B231710B7C1 /* SwiftTorrent */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SwiftTorrent; path = Vendor/SwiftTorrent; sourceTree = SOURCE_ROOT; };
 		BDCB0DBD5C60776A780FB126 /* iDownloader.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = iDownloader.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BE939C2808946E0F053DCE33 /* TaskListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskListView.swift; sourceTree = "<group>"; };
 		C4294016A513AD4E360DC475 /* TaskPropertiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPropertiesView.swift; sourceTree = "<group>"; };
@@ -84,8 +87,17 @@
 			isa = PBXGroup;
 			children = (
 				E3281FC3AFDDAAB8FD45FBFD /* App */,
+				9BE70164B797058D7B34933F /* Packages */,
 				2CD7600A9B146359B5AF5DAF /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		9BE70164B797058D7B34933F /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				B3E51B3667060B231710B7C1 /* SwiftTorrent */,
+			);
+			name = Packages;
 			sourceTree = "<group>";
 		};
 		A6EE528B294A03A5B0A5FA21 /* engine */ = {
@@ -97,6 +109,7 @@
 				4FE98CA982C638EBC5652B9A /* GitHubProxy.swift */,
 				1C1FC823481B1E9F3A2C8892 /* Paths.swift */,
 				8CDEF462916BA35029BE4FCC /* TaskRecord.swift */,
+				A194F9B7CE8AA5EC97263613 /* TaskRun.swift */,
 				75375480B6DE6FCDBBD9B9B3 /* TaskService.swift */,
 				43E91377F99185AB575979D9 /* TorrentRun.swift */,
 			);
@@ -159,7 +172,7 @@
 			mainGroup = 4641369D869E6BF3FC5EFEAC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				696E1D99BEDB099872B8196C /* XCRemoteSwiftPackageReference "swift-torrent" */,
+				4861FC10AF35218EE69987C0 /* XCLocalSwiftPackageReference "Vendor/SwiftTorrent" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2CD7600A9B146359B5AF5DAF /* Products */;
@@ -198,6 +211,7 @@
 				5A053C1DD79686FC47DF4CFD /* TaskPropertiesView.swift in Sources */,
 				B86879750348FA3E44B83340 /* TaskRecord.swift in Sources */,
 				2AA7C031AFC0453394573C11 /* TaskRow.swift in Sources */,
+				518450A9357A178A755BF184 /* TaskRun.swift in Sources */,
 				88CCFE1C39A3C1CE7CE35A17 /* TaskService.swift in Sources */,
 				90797B2FFB67A0C1E53F5E2A /* TasksPage.swift in Sources */,
 				D506CF95260BDECEFF01BFF5 /* TorrentRun.swift in Sources */,
@@ -392,21 +406,16 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		696E1D99BEDB099872B8196C /* XCRemoteSwiftPackageReference "swift-torrent" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/warppipe/swift-torrent";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		4861FC10AF35218EE69987C0 /* XCLocalSwiftPackageReference "Vendor/SwiftTorrent" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Vendor/SwiftTorrent;
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		61093E23003A59A8A62AB24B /* SwiftTorrent */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 696E1D99BEDB099872B8196C /* XCRemoteSwiftPackageReference "swift-torrent" */;
 			productName = SwiftTorrent;
 		};
 /* End XCSwiftPackageProductDependency section */

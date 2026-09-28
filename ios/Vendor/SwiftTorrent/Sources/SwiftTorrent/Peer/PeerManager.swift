@@ -20,6 +20,12 @@ public actor PeerManager {
     public var onPieceCompleted: ((Int) -> Void)?
     public var onMetadataReceived: ((TorrentInfo) -> Void)?
 
+    // BEP-11 ut_pex：本地宣告的消息 id 固定为 2
+    private let pexLocalID: UInt8 = 2
+    private var pexPeerIDs: [String: UInt8] = [:]
+    private var pexUnsent: [(String, UInt16)] = []
+    private var pexLastSentAt: Date?
+
     private var pieceCount: Int = 0
 
     public init(infoHash: Data, peerID: Data, group: EventLoopGroup, maxConnections: Int = 50) {
@@ -88,11 +94,37 @@ public actor PeerManager {
         // Send interested
         try? await conn.send(.interested)
 
-        // If peer supports extensions and we need metadata, send extended handshake
-        if conn.supportsExtensions, let metaEx = metadataExchange {
-            let extHandshake = await metaEx.buildExtendedHandshake()
+        // Extended handshake carries ut_metadata (magnet path) and ut_pex (always)
+        if conn.supportsExtensions {
+            let extHandshake = await buildExtendedHandshake()
             try? await conn.send(.extended(id: 0, payload: extHandshake))
         }
+    }
+
+    /// Combines MetadataExchange's handshake dict with our ut_pex advertisement.
+    private func buildExtendedHandshake() async -> Data {
+        var root: [(key: Data, value: BencodeValue)] = []
+        if let metaEx = metadataExchange {
+            let raw = await metaEx.buildExtendedHandshake()
+            if let decoded = try? BencodeDecoder().decode(raw),
+               case .dictionary(let pairs) = decoded {
+                root = pairs
+            }
+        }
+
+        let utPex: (key: Data, value: BencodeValue) = (
+            Data("ut_pex".utf8), .integer(Int64(pexLocalID))
+        )
+        if let mIndex = root.firstIndex(where: { $0.key == Data("m".utf8) }) {
+            if case .dictionary(var m) = root[mIndex].value {
+                m.removeAll { $0.key == utPex.key }
+                m.append(utPex)
+                root[mIndex].value = .dictionary(m)
+            }
+        } else {
+            root.append((Data("m".utf8), .dictionary([utPex])))
+        }
+        return BencodeEncoder().encode(.dictionary(root))
     }
 
     private func handleDisconnect(key: String) {
@@ -167,24 +199,88 @@ public actor PeerManager {
             await fillRequests(for: key)
 
         case .extended(let extID, let payload):
-            if let metaEx = metadataExchange {
-                let result = await metaEx.handleExtendedMessage(id: extID, payload: payload)
-                switch result {
-                case .sendMessage(let msg):
-                    try? await connections[key]?.send(msg)
-                case .requestMore(let messages):
-                    for msg in messages {
-                        try? await connections[key]?.send(msg)
-                    }
-                case .metadataComplete(let info):
-                    onMetadataReceived?(info)
-                case .none:
-                    break
-                }
-            }
+            await handleExtendedMessage(extID: extID, payload: payload, from: key)
 
         default:
             break
+        }
+    }
+
+    private func handleExtendedMessage(extID: UInt8, payload: Data, from key: String) async {
+        if extID == 0 {
+            // Record which message id this peer uses for ut_pex
+            if let decoded = try? BencodeDecoder().decode(payload),
+               let pexID = decoded["m"]?["ut_pex"]?.integerValue,
+               pexID > 0, pexID <= Int(UInt8.max) {
+                pexPeerIDs[key] = UInt8(pexID)
+            }
+        } else if extID == pexPeerIDs[key], let decoded = try? BencodeDecoder().decode(payload),
+                  let added = decoded["added"]?.stringValue {
+            // BEP-11: "added" is a compact IPv4 peer list; dropped is ignored
+            for (address, port) in Self.parseCompactPeers(added) {
+                if pexUnsent.count < 200 {
+                    pexUnsent.append((address, port))
+                }
+                await addPeer(address: address, port: port)
+            }
+        }
+
+        guard let metaEx = metadataExchange else { return }
+        let result = await metaEx.handleExtendedMessage(id: extID, payload: payload)
+        switch result {
+        case .sendMessage(let msg):
+            try? await connections[key]?.send(msg)
+        case .requestMore(let messages):
+            for msg in messages {
+                try? await connections[key]?.send(msg)
+            }
+        case .metadataComplete(let info):
+            onMetadataReceived?(info)
+        case .none:
+            break
+        }
+    }
+
+    private static func parseCompactPeers(_ data: Data) -> [(String, UInt16)] {
+        let bytes = [UInt8](data)
+        var peers: [(String, UInt16)] = []
+        var offset = 0
+        while offset + 6 <= bytes.count {
+            let ip = "\(bytes[offset]).\(bytes[offset + 1]).\(bytes[offset + 2]).\(bytes[offset + 3])"
+            let port = UInt16(bytes[offset + 4]) << 8 | UInt16(bytes[offset + 5])
+            peers.append((ip, port))
+            offset += 6
+        }
+        return peers
+    }
+
+    /// Broadcasts peers discovered via PEX to connected peers; call periodically (~every 2 s),
+    /// it self-throttles to BEP-11's suggested ~60 s cadence.
+    public func pexTick() async {
+        if let last = pexLastSentAt, Date().timeIntervalSince(last) < 60 { return }
+        pexLastSentAt = Date()
+
+        guard !pexUnsent.isEmpty else { return }
+        let announced = pexUnsent
+        pexUnsent.removeAll()
+
+        var bytes = Data()
+        for (address, port) in announced {
+            let octets = address.split(separator: ".").compactMap { UInt8($0) }
+            guard octets.count == 4 else { continue }
+            bytes.append(contentsOf: octets)
+            bytes.append(UInt8(port >> 8))
+            bytes.append(UInt8(port & 0xFF))
+        }
+        guard !bytes.isEmpty else { return }
+
+        let payload = BencodeEncoder().encode(.dictionary([
+            (key: Data("added".utf8), value: .string(bytes)),
+            (key: Data("dropped".utf8), value: .string(Data())),
+        ]))
+        for (key, conn) in connections
+        where pexPeerIDs[key] != nil && connectedPeers.contains(key) {
+            try? await conn.send(.extended(id: pexLocalID, payload: payload))
         }
     }
 

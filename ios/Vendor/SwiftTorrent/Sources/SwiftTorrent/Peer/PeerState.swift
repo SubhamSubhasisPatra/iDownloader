@@ -18,7 +18,9 @@ public actor PeerState {
     private var pendingRequests: [BlockRequest: Date] = [:]
     public let maxPipelineDepth: Int
 
-    public init(pieceCount: Int, maxPipelineDepth: Int = 5) {
+    // 5 个在途请求 ≈ 80 KiB，高 RTT 链路的吞吐被窗口卡死；32 个 ≈ 512 KiB 在途，
+    // 与主流客户端的每 peer 请求队列深度一致
+    public init(pieceCount: Int, maxPipelineDepth: Int = 32) {
         self.peerBitfield = Bitfield(count: pieceCount)
         self.maxPipelineDepth = maxPipelineDepth
     }

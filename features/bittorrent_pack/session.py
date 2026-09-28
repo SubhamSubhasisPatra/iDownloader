@@ -300,7 +300,16 @@ class BTSession:
                 "active_seeds": -1,
                 "active_limit": -1,
                 "active_checking": -1,
-                "mixed_mode_algorithm": int(lt.bandwidth_mixed_algo_t.prefer_tcp),
+                # peer_proportional 是上游默认值；prefer_tcp 会让 uTP 让位 TCP，
+                # 而现代 swarm 里大量 peer 只走 uTP，等于主动限速
+                "mixed_mode_algorithm": int(lt.bandwidth_mixed_algo_t.peer_proportional),
+                # 默认 30：首个 tracker 响应只连 30 个 peer，起速爬坡慢
+                "torrent_connect_boost": 100,
+                # 0 表示交给 OS 默认；高延迟链路和 uTP（共享 UDP 缓冲）需要更大的窗口
+                "recv_socket_buffer_size": 4 * 1024 * 1024,
+                "send_socket_buffer_size": 4 * 1024 * 1024,
+                "send_buffer_watermark": 3 * 1024 * 1024,
+                "send_buffer_watermark_factor": 100,
                 "enable_upnp": True,
                 "enable_natpmp": True,
                 "alert_mask": ALERT_MASK,
@@ -424,6 +433,14 @@ class BTSession:
     def _routeAlert(self, alert) -> None:
         if isinstance(alert, lt.performance_alert):
             logger.warning("BitTorrent 性能警告: {}", alert.message())
+            return
+
+        # 这两种 alert 没有 handle，提前处理避免被丢弃
+        if isinstance(alert, lt.listen_succeeded_alert):
+            logger.info("BitTorrent 监听端口: {}", alert.message())
+            return
+        if isinstance(alert, lt.listen_failed_alert):
+            logger.warning("BitTorrent 监听失败: {}", alert.message())
             return
 
         if not hasattr(alert, "handle"):

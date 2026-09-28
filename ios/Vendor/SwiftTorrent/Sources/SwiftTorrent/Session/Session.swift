@@ -29,7 +29,7 @@ public actor Session {
             return existing
         }
 
-        let handle = TorrentHandle(params: params, settings: settings, group: group)
+        let handle = TorrentHandle(params: params, settings: settings, group: group, dhtNode: dhtNode)
         await handle.finishInitialization()
         torrents[hash] = handle
 
@@ -51,10 +51,9 @@ public actor Session {
         await handle.pause()
 
         if deleteFiles {
-            let _ = await handle.status()
-            // Delete files from disk
-            let path = settings.savePath
-            try? FileManager.default.removeItem(atPath: path)
+            // Only the torrent's own savePath — removing settings.savePath would
+            // wipe every other torrent's files
+            await handle.deleteFiles()
         }
 
         alertContinuation.yield(TorrentRemovedAlert(infoHash: infoHash))

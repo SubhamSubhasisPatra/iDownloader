@@ -1,5 +1,4 @@
 {
-  "originHash" : "5ce3cb92356f38f8b3c3a2735ecc9c436f6e47c625776f7055482f8a97a552d3",
   "pins" : [
     {
       "identity" : "swift-algorithms",
@@ -153,16 +152,7 @@
         "revision" : "869129b7bf4ecc57b97d0193ad29690ca2134750",
         "version" : "1.8.1"
       }
-    },
-    {
-      "identity" : "swift-torrent",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/warppipe/swift-torrent",
-      "state" : {
-        "branch" : "main",
-        "revision" : "79ab342c50621d69bce0d6f61228fcaf70c4ae48"
-      }
     }
   ],
-  "version" : 3
+  "version" : 2
 }

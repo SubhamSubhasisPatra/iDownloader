@@ -20,7 +20,13 @@ so this folder re-implements the core natively in Swift:
   exponential backoff, honoring `Retry-After`; `If-Range` guards against the remote
   file changing between sessions.
 - **BitTorrent** (magnet + .torrent) based on [swift-torrent](https://github.com/warppipe/swift-torrent)
-  (pure Swift, BEP-3/5/9/10/15: DHT, UDP/HTTP trackers, metadata exchange).
+  (pure Swift, BEP-3/5/9/10/11/15: DHT, UDP/HTTP trackers, metadata exchange, PEX).
+  **Vendored** at `Vendor/SwiftTorrent` (upstream revision `79ab342`) with local patches:
+  - per-peer request pipeline depth 5 → 32 (main download-throughput fix on high-RTT links)
+  - DHT `get_peers` loop wired into each torrent (peers no longer come from trackers alone)
+  - BEP-11 ut_pex peer exchange (discover peers from connected peers)
+  - extended handshake sent on every torrent, not just magnets
+  - `removeTorrent(deleteFiles: true)` deletes only that torrent's files, not the whole save root
 - **GitHub acceleration** — 21 proxy sites plus auto site racing (first response wins).
 - Categories (Videos / Music / Documents / Compressed / Programs / APKs / Images) with
   optional category subfolders, native sidebar, multi-column table on wide screens,
@@ -28,8 +34,9 @@ so this folder re-implements the core natively in Swift:
 
 ## Building
 
-Requires Xcode 26+ and [xcodegen](https://github.com/yonaskolb/XcodeGen). The first
-build fetches SwiftTorrent and its SPM dependencies (swift-nio, swift-crypto, ...).
+Requires Xcode 26+ and [xcodegen](https://github.com/yonaskolb/XcodeGen). SwiftTorrent is
+vendored, so only swift-nio / swift-crypto / swift-nio-extras come from the network on first
+build.
 
 ```sh
 cd ios

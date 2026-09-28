@@ -96,7 +96,9 @@ its own parser (`CMediaSegment@CM3UParser`, `Segment-Count`,
    granularity across sessions and crashes.
 5. Two decades of Windows-specific tuning around the above.
 
-## 4. Mapping to iDownloader (iOS)
+## 4. Mapping to iDownloader
+
+### 4.1 iOS / iPadOS / Mac Catalyst (Swift engine)
 
 | IDM technique | iDownloader implementation |
 |---|---|
@@ -106,6 +108,57 @@ its own parser (`CMediaSegment@CM3UParser`, `Segment-Count`,
 | Stall restarts | Request timeout (30 s) returns the unfinished range to the pool; another connection picks it up |
 | `.idm` segment map | `map.json` per task: completed ranges persisted every 3 s (sparse preallocated `data` file) |
 | Restart on failure | Automatic retries with exponential backoff honoring `Retry-After` (IDM lacks this); `If-Range`/ETag guards resume correctness |
+
+### 4.2 Desktop & Android (Python engine, `features/http_pack/task.py`)
+
+The Python engine closes the same gap this file describes: it used to build and
+close a fresh `wreq` client for every range request attempt, paying a TCP +
+TLS handshake and slow-start on every retry and every work steal — the exact
+cost §3 item 2 names as IDM's biggest throughput trick. One client per step
+run is now shared by the probe and all subworkers.
+
+| IDM technique | iDownloader implementation |
+|---|---|
+| Raw-socket pool | One pooled `wreq` Client per step run, shared by probe + all subworkers; idle connections survive between ranges, retries and steals. HTTP/2 multiplexing comes free on modern servers — h1.1-only IDM cannot do this |
+| Keep-alive reuse | A fully-read body returns its connection to the pool automatically; `Response.close()` force-discards the connection, so it runs only on error paths (verified empirically against a local server). The probe reads its 1-byte `bytes=0-0` body to completion, donating a warm connection to the first range |
+| Dynamic file segmentation | Static initial split; a finished worker splits the slowest worker's remaining tail; `_autoSpeedUp` adds workers while speed stays stable. Approximates the pool; the Swift engine (4.1) implements it natively |
+| Stall restarts | 30 s read timeout per stream, then infinite 5 s retries resuming at the exact byte offset |
+| `.idm` segment map | `{output}.ghd`: 24 bytes per subworker, rewritten every 1 s by the supervisor |
+| Restart on failure | Permanent-status detection, single-stream degradation on 200-for-range, `Retry-After`-aware outer backoff (ahead of IDM per §2.5) |
+
+Verified by `tests/test_http_subworker.py::TestConnectionReuse`: a run with
+probe + initial ranges + a post-steal range completes on fewer TCP
+connections than range requests.
+
+### 4.3 Slow-connection stealing and retirement (v5.2)
+
+The pool-level design of §4.1 still let one slow connection hold a large
+in-flight range until the end (the "long tail" only shrank via chunk sizing).
+Two IDM-grade mechanisms complete the picture, both in `SegmentPool`:
+
+1. **Stealing** — a monitor samples every connection's rate once per second.
+   Any connection below 25% of the fastest one hands half of its remaining
+   range back to the pool (cooldown 2 s, floor 512 KiB); the coordinator
+   self-cancels the connection's request at the stolen boundary and reports
+   the valid prefix as complete.
+2. **Retirement** — a connection that stays below the threshold stops
+   receiving new work entirely (at least two connections stay active), so the
+   end game is split among fast connections only.
+
+Benchmark (48 MiB file, 8 connections, localhost server with per-connection
+rate caps; median of runs; throughput as measured through the full engine
+stack including disk writes):
+
+| Scenario | fixed 8-way split (pre-v5.1) | dynamic + steal + retire |
+|---|---|---|
+| Uniform connections (4 MiB/s each) | 4.14 s (11.6 MiB/s) | **3.24 s (14.8 MiB/s)** |
+| Two stragglers at 0.5 MiB/s | 13.35 s (3.6 MiB/s) | **7.86 s (6.1 MiB/s)** |
+
+The straggler gain is bounded by the harness: the Python test server itself
+cannot push 4 MiB/s per connection under the GIL, so both engines are
+server-limited in the uniform case. The relative gap in the straggler case
+matches the theory: fixed split ties the tail to the slowest connection's
+remaining range, while steal+retire hands that range to faster connections.
 
 ## 5. Reproducing the analysis
 

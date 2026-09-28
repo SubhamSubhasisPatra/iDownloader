@@ -2,11 +2,6 @@ import UIKit
 import Observation
 import SwiftTorrent
 
-/// One active task run; the service calls stop() to pause or cancel it.
-protocol TaskRun: Actor {
-    func stop() async
-}
-
 /// Single public entry point owning the user-visible task workflow: schedules runs, persists records, aggregates speed.
 @MainActor
 @Observable

@@ -2,7 +2,11 @@ import Foundation
 
 enum Paths {
     static var documents: URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        // Test seam: benchmarks and unit tools can redirect the library root.
+        if let override = ProcessInfo.processInfo.environment["IDOWNLOADER_DOCS_DIR"] {
+            return URL(fileURLWithPath: override, isDirectory: true)
+        }
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
 
     static var appSupport: URL {
