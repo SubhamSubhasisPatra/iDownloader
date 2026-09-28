@@ -207,20 +207,25 @@ struct SegmentMap: Codable {
 
 /// One task run: dynamic-segment multi-connection download with connection reuse.
 ///
-/// All connections share a single URLSession, so HTTP/1.1 keep-alive connections
+/// All runs share the service-wide URLSession, so HTTP/1.1 keep-alive connections
 /// are reused and HTTP/2 servers multiplex every range over one warm TCP
-/// connection — no slow-start penalty per segment.
+/// connection — no slow-start penalty per segment, and the pool stays warm
+/// across tasks (the same trick IDM's raw-socket pool uses).
 actor DownloadRun: TaskRun {
     private let record: TaskRecord
     private let subworkerCount: Int
     private let counter = ByteCounter()
-    private var session: URLSession?
+    private let httpSession: URLSession
+    private let httpCoordinator: SegmentCoordinator
+    private var activeTasks: [Int: URLSessionDataTask] = [:]
     private var probedSize: Int64 = 0
     private var segmentsKnown: Int = 0
 
-    init(record: TaskRecord, subworkerCount: Int) {
+    init(record: TaskRecord, subworkerCount: Int, httpSession: URLSession, httpCoordinator: SegmentCoordinator) {
         self.record = record
         self.subworkerCount = subworkerCount
+        self.httpSession = httpSession
+        self.httpCoordinator = httpCoordinator
     }
 
     func writtenBytes() -> Int64 {
@@ -236,8 +241,10 @@ actor DownloadRun: TaskRun {
     }
 
     func stop() {
-        session?.invalidateAndCancel()
-        session = nil
+        for task in activeTasks.values {
+            task.cancel()
+        }
+        activeTasks.removeAll()
     }
 
     /// Runs the download. Returns (final size, final file name — may be renumbered
@@ -301,21 +308,10 @@ actor DownloadRun: TaskRun {
         }
         defer { persistTask.cancel() }
 
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 30
-        config.requestCachePolicy = .reloadIgnoringLocalCacheData
-        let coordinator = SegmentCoordinator(counter: counter)
-        let runSession = URLSession(configuration: config, delegate: coordinator, delegateQueue: nil)
-        session = runSession
-        defer {
-            runSession.finishTasksAndInvalidate()
-            self.session = nil
-        }
-
         try await withThrowingTaskGroup(of: Void.self) { group in
             for _ in 0..<workerCount {
                 group.addTask { [url] in
-                    try await self.workerLoop(pool, coordinator, folder, url, etag, workerCount)
+                    try await self.workerLoop(pool, self.httpCoordinator, folder, url, etag, workerCount)
                 }
             }
             try await group.waitForAll()
@@ -349,7 +345,7 @@ actor DownloadRun: TaskRun {
                 continue
             }
             do {
-                let complete = try await downloadRange(claim, coordinator, handle, url, etag)
+                let complete = try await downloadRange(claim, httpCoordinator, handle, url, etag)
                 pool.finish(claim)
                 if complete {
                     transientErrors = 0
@@ -395,15 +391,14 @@ actor DownloadRun: TaskRun {
             request.setValue(etag, forHTTPHeaderField: "If-Range")
         }
 
-        let task = session?.dataTask(with: request)
-        guard let task else {
-            throw DownloadError(message: "Session was invalidated")
-        }
+        let task = httpSession.dataTask(with: request)
+        activeTasks[task.taskIdentifier] = task
+        defer { activeTasks[task.taskIdentifier] = nil }
         do {
             try await withTaskCancellationHandler {
                 try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                     coordinator.register(taskIdentifier: task.taskIdentifier, handle: handle,
-                                         startOffset: offset, claim: claim,
+                                         startOffset: offset, claim: claim, counter: counter,
                                          continuation: continuation)
                     task.resume()
                 }
@@ -444,25 +439,16 @@ actor DownloadRun: TaskRun {
         defer { try? handle.close() }
         counter.reset(0)
 
-        let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 30
-        config.requestCachePolicy = .reloadIgnoringLocalCacheData
-        let coordinator = SegmentCoordinator(counter: counter)
-        let runSession = URLSession(configuration: config, delegate: coordinator, delegateQueue: nil)
-        session = runSession
-        defer {
-            runSession.finishTasksAndInvalidate()
-            self.session = nil
-        }
-
         var request = URLRequest(url: url)
         request.timeoutInterval = 30
         request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
-        let task = runSession.dataTask(with: request)
+        let task = httpSession.dataTask(with: request)
+        activeTasks[task.taskIdentifier] = task
+        defer { activeTasks[task.taskIdentifier] = nil }
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                coordinator.registerSingleStream(taskIdentifier: task.taskIdentifier, handle: handle,
-                                                 continuation: continuation)
+                httpCoordinator.registerSingleStream(taskIdentifier: task.taskIdentifier, handle: handle,
+                                                 counter: counter, continuation: continuation)
                 task.resume()
             }
         } onCancel: {
@@ -546,28 +532,25 @@ final class SegmentCoordinator: NSObject, URLSessionDataDelegate, @unchecked Sen
     }
 
     private let lock = NSLock()
-    private let counter: ByteCounter
     private var boxes: [Int: TaskBox] = [:]
 
-    init(counter: ByteCounter) {
-        self.counter = counter
-        super.init()
-    }
-
     func register(taskIdentifier: Int, handle: FileHandle, startOffset: Int64,
-                  claim: SegmentPool.Claim, continuation: CheckedContinuation<Void, Error>) {
+                  claim: SegmentPool.Claim, counter: ByteCounter,
+                  continuation: CheckedContinuation<Void, Error>) {
         registerBox(taskIdentifier: taskIdentifier, expects206: true, continuation: continuation) { data in
             try handle.seek(toFileOffset: UInt64(startOffset + Int64(claim.written)))
             try handle.write(contentsOf: data)
             claim.written += data.count
+            counter.add(Int64(data.count))
         }
     }
 
-    func registerSingleStream(taskIdentifier: Int, handle: FileHandle,
+    func registerSingleStream(taskIdentifier: Int, handle: FileHandle, counter: ByteCounter,
                               continuation: CheckedContinuation<Void, Error>) {
         registerBox(taskIdentifier: taskIdentifier, expects206: false, continuation: continuation) { data in
             try handle.seekToEndOfFile()
             try handle.write(contentsOf: data)
+            counter.add(Int64(data.count))
         }
     }
 
@@ -623,7 +606,6 @@ final class SegmentCoordinator: NSObject, URLSessionDataDelegate, @unchecked Sen
         guard let box else { return }
         do {
             try box.onWrite(data)
-            counter.add(Int64(data.count))
         } catch {
             box.failure = DownloadError(message: "Write failed: \(error.localizedDescription)")
             dataTask.cancel()

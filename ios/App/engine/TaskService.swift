@@ -21,7 +21,15 @@ final class TaskService {
     private var httpTotal: Int64 = 0
     private var speedTimer: Timer?
 
+    /// Service-wide HTTP session: one warm connection pool shared by every run.
+    private let httpCoordinator = SegmentCoordinator()
+    private let httpSession: URLSession
+
     init() {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 30
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        httpSession = URLSession(configuration: config, delegate: httpCoordinator, delegateQueue: nil)
         loadSavedTasks()
         scheduleNext()
         speedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -288,7 +296,8 @@ final class TaskService {
     private func startHTTPRun(_ taskId: String) {
         guard let index = taskIndex(taskId), tasks[index].status == .waiting else { return }
         let storedSubworkers = UserDefaults.standard.integer(forKey: "subworkerCount")
-        let run = DownloadRun(record: tasks[index], subworkerCount: storedSubworkers > 0 ? storedSubworkers : 8)
+        let run = DownloadRun(record: tasks[index], subworkerCount: storedSubworkers > 0 ? storedSubworkers : 8,
+                              httpSession: httpSession, httpCoordinator: httpCoordinator)
         tasks[index].status = .running
         runs[taskId] = run
 
