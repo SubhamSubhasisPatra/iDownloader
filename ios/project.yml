@@ -1,6 +1,6 @@
 name: iDownloader
 options:
-  bundleIdPrefix: com.xychr
+  bundleIdPrefix: io.github.subhamsubhasispatra
   deploymentTarget:
     iOS: "17.0"
 packages:
@@ -20,11 +20,15 @@ targets:
     platform: iOS
     sources:
       - App
+      - path: ../LICENSE
+        buildPhase: resources
+      - path: THIRD-PARTY-NOTICES.md
+        buildPhase: resources
     dependencies:
       - package: SwiftTorrent
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.xychr.ghostdownloader.ios
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.subhamsubhasispatra.idownloader
         INFOPLIST_FILE: App/Info.plist
     info:
       path: App/Info.plist
@@ -32,6 +36,7 @@ targets:
         CFBundleDisplayName: iDownloader
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSHumanReadableCopyright: "GNU GPL v3. iDownloader is a fork of Ghost-Downloader-3 (© 2024-2026 XiaoYouChR); modifications © 2026 Subham Subhasis Patra."
         UILaunchScreen: {}
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true

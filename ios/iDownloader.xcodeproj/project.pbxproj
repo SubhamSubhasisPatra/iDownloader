@@ -9,8 +9,11 @@
 /* Begin PBXBuildFile section */
 		008C5C54061D23B5F09FD5E9 /* AddSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D32ECFE4BA8F5F4B6AD6359D /* AddSheet.swift */; };
 		10A49FA6BE0275CA6F555329 /* iDownloaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4768E984B096140D214EF41E /* iDownloaderApp.swift */; };
+		16D922790115FA8E7EBBE8E3 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 65A21C26C6B8EFCF20E5BF78 /* LICENSE */; };
 		1805E17B79FCFF34E6F333B1 /* TaskListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE939C2808946E0F053DCE33 /* TaskListView.swift */; };
 		2AA7C031AFC0453394573C11 /* TaskRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD4502A05D9EB3700FD6ABAF /* TaskRow.swift */; };
+		36D639866A84013149EAEC8F /* LicensesPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F814CC2EE780C2305B2FF7 /* LicensesPage.swift */; };
+		4863FED501869201D9353610 /* THIRD-PARTY-NOTICES.md in Resources */ = {isa = PBXBuildFile; fileRef = 8E6F1092832BDFFC756B09B8 /* THIRD-PARTY-NOTICES.md */; };
 		4A99BD0AAE8A69A3DDC83BA7 /* GitHubProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE98CA982C638EBC5652B9A /* GitHubProxy.swift */; };
 		518450A9357A178A755BF184 /* TaskRun.swift in Sources */ = {isa = PBXBuildFile; fileRef = A194F9B7CE8AA5EC97263613 /* TaskRun.swift */; };
 		570DC99839F62DBD4654AF42 /* Format.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17960B400383E5EA43D87B05 /* Format.swift */; };
@@ -34,11 +37,14 @@
 		43E91377F99185AB575979D9 /* TorrentRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentRun.swift; sourceTree = "<group>"; };
 		46AE00E0EF4431751211D779 /* SettingsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPage.swift; sourceTree = "<group>"; };
 		4768E984B096140D214EF41E /* iDownloaderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iDownloaderApp.swift; sourceTree = "<group>"; };
+		48F814CC2EE780C2305B2FF7 /* LicensesPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicensesPage.swift; sourceTree = "<group>"; };
 		4FE98CA982C638EBC5652B9A /* GitHubProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubProxy.swift; sourceTree = "<group>"; };
+		65A21C26C6B8EFCF20E5BF78 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
 		73ED4F4903AAB3E48390A3B5 /* TasksPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksPage.swift; sourceTree = "<group>"; };
 		75375480B6DE6FCDBBD9B9B3 /* TaskService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskService.swift; sourceTree = "<group>"; };
 		86416FEDBFF710E7D9210105 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8CDEF462916BA35029BE4FCC /* TaskRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRecord.swift; sourceTree = "<group>"; };
+		8E6F1092832BDFFC756B09B8 /* THIRD-PARTY-NOTICES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "THIRD-PARTY-NOTICES.md"; sourceTree = "<group>"; };
 		9C09849333DFB5AC18B4D7C8 /* Category.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Category.swift; sourceTree = "<group>"; };
 		A194F9B7CE8AA5EC97263613 /* TaskRun.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRun.swift; sourceTree = "<group>"; };
 		B3E51B3667060B231710B7C1 /* SwiftTorrent */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SwiftTorrent; path = Vendor/SwiftTorrent; sourceTree = SOURCE_ROOT; };
@@ -62,6 +68,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		197B5B228B8CFF6D3ADD67E9 /* iDownloader */ = {
+			isa = PBXGroup;
+			children = (
+				65A21C26C6B8EFCF20E5BF78 /* LICENSE */,
+			);
+			name = iDownloader;
+			path = ..;
+			sourceTree = "<group>";
+		};
 		2CD7600A9B146359B5AF5DAF /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -74,6 +89,7 @@
 			isa = PBXGroup;
 			children = (
 				D32ECFE4BA8F5F4B6AD6359D /* AddSheet.swift */,
+				48F814CC2EE780C2305B2FF7 /* LicensesPage.swift */,
 				46AE00E0EF4431751211D779 /* SettingsPage.swift */,
 				BE939C2808946E0F053DCE33 /* TaskListView.swift */,
 				C4294016A513AD4E360DC475 /* TaskPropertiesView.swift */,
@@ -86,7 +102,9 @@
 		4641369D869E6BF3FC5EFEAC = {
 			isa = PBXGroup;
 			children = (
+				8E6F1092832BDFFC756B09B8 /* THIRD-PARTY-NOTICES.md */,
 				E3281FC3AFDDAAB8FD45FBFD /* App */,
+				197B5B228B8CFF6D3ADD67E9 /* iDownloader */,
 				9BE70164B797058D7B34933F /* Packages */,
 				2CD7600A9B146359B5AF5DAF /* Products */,
 			);
@@ -190,6 +208,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				7DD516AE29CBEDFFC248885E /* Assets.xcassets in Resources */,
+				16D922790115FA8E7EBBE8E3 /* LICENSE in Resources */,
+				4863FED501869201D9353610 /* THIRD-PARTY-NOTICES.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -205,6 +225,7 @@
 				BE458CE9189157FDFAD218C1 /* DownloadRun.swift in Sources */,
 				570DC99839F62DBD4654AF42 /* Format.swift in Sources */,
 				4A99BD0AAE8A69A3DDC83BA7 /* GitHubProxy.swift in Sources */,
+				36D639866A84013149EAEC8F /* LicensesPage.swift in Sources */,
 				EE06CE5B91D41643487339BA /* Paths.swift in Sources */,
 				CEE63E8DF901F5C0D350D375 /* SettingsPage.swift in Sources */,
 				1805E17B79FCFF34E6F333B1 /* TaskListView.swift in Sources */,
@@ -300,7 +321,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.xychr.ghostdownloader.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.subhamsubhasispatra.idownloader;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -316,7 +337,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.xychr.ghostdownloader.ios;
+				PRODUCT_BUNDLE_IDENTIFIER = io.github.subhamsubhasispatra.idownloader;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

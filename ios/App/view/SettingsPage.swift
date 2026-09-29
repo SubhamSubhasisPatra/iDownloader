@@ -82,7 +82,10 @@ struct SettingsPage: View {
 
             Section("About") {
                 LabeledContent("Version", value: "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?") (iOS)")
-                Link("GitHub Repository", destination: URL(string: "https://github.com/XiaoYouChR/Ghost-Downloader-3")!)
+                NavigationLink("Licenses & Acknowledgments") {
+                    LicensesPage()
+                }
+                Link("GitHub Repository", destination: URL(string: "https://github.com/SubhamSubhasisPatra/iDownloader")!)
             }
         }
         .navigationTitle("Settings")
