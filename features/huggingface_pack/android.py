@@ -1,4 +1,4 @@
-UI_CLASS = "com.xychr.ghostdownloader.features.huggingface_pack.HuggingFaceUi"
+UI_CLASS = "io.github.subhamsubhasispatra.idownloader.features.huggingface_pack.HuggingFaceUi"
 
 def proxySiteList() -> list:
     from .config import HF_PROXY_SITES

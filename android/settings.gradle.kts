@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Ghost Downloader"
+rootProject.name = "iDownloader"
 include(":app")

@@ -70,7 +70,7 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">Nenhuma atualização disponível para a plataforma atual</string>
     <string name="engine_taskerrors_e365462d" formatted="false">Este vídeo não está disponível na sua região, tente configurar um proxy ({detail})</string>
     <string name="engine_taskerrors_f5662126" formatted="false">Vídeo com restrição de idade, é necessário fazer login. Baixe através da extensão do navegador ou importe o Cookie manualmente nas configurações ({detail})</string>
-    <string name="engine_taskerrors_f8b419f2" formatted="false">O macOS impediu o acesso ao diretório de download, adicione o Ghost Downloader em Ajustes do Sistema &gt; Privacidade e Segurança &gt; Acesso Total ao Disco</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">O macOS impediu o acesso ao diretório de download, adicione o iDownloader em Ajustes do Sistema &gt; Privacidade e Segurança &gt; Acesso Total ao Disco</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">Falha ao obter o código QR</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">Este link eD2k já está em download</string>
 </resources>

@@ -243,7 +243,7 @@ def requestForeground() -> None:
         import win32gui
         import win32process
 
-        hwnd = win32gui.FindWindow(None, "Ghost Downloader")
+        hwnd = win32gui.FindWindow(None, "iDownloader")
         if not hwnd:
             return
         foregroundHwnd = win32gui.GetForegroundWindow()

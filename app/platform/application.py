@@ -147,7 +147,7 @@ if sys.platform == "win32":
     import win32api
     import win32gui
 
-    IPC_CLASS_NAME = "GhostDownloaderIPC"
+    IPC_CLASS_NAME = "iDownloaderIPC"
     COPYDATA_OPEN_FILES = 0x4744
     WM_COPYDATA = 0x004A
     WM_USER_WAKE = 1025

@@ -25,10 +25,10 @@ def _setWindows(enabled: bool) -> None:
         0, winreg.KEY_WRITE,
     )
     if enabled:
-        winreg.SetValueEx(key, "GhostDownloader", 0, winreg.REG_SZ, f'"{EXECUTABLE_PATH}" --silence')
+        winreg.SetValueEx(key, "iDownloader", 0, winreg.REG_SZ, f'"{EXECUTABLE_PATH}" --silence')
     else:
         try:
-            winreg.DeleteValue(key, "GhostDownloader")
+            winreg.DeleteValue(key, "iDownloader")
         except FileNotFoundError:
             pass
     winreg.CloseKey(key)
@@ -36,7 +36,7 @@ def _setWindows(enabled: bool) -> None:
 
 def _setMacOS(enabled: bool) -> None:
     from pwd import getpwuid
-    plistPath = Path(f"/Users/{getpwuid(os.getuid()).pw_name}/Library/LaunchAgents/com.xiaoyouchr.ghostdownloader.plist")
+    plistPath = Path(f"/Users/{getpwuid(os.getuid()).pw_name}/Library/LaunchAgents/io.github.subhamsubhasispatra.idownloader.plist")
 
     if enabled:
         plistPath.parent.mkdir(parents=True, exist_ok=True)
@@ -45,7 +45,7 @@ def _setMacOS(enabled: bool) -> None:
             '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
             '"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
             '<plist version="1.0">\n<dict>\n'
-            '<key>Label</key>\n<string>com.xiaoyouchr.ghostdownloader</string>\n'
+            '<key>Label</key>\n<string>io.github.subhamsubhasispatra.idownloader</string>\n'
             '<key>ProgramArguments</key>\n<array>\n'
             f'<string>{EXECUTABLE_PATH}</string>\n<string>--silence</string>\n'
             '</array>\n<key>RunAtLoad</key>\n<true/>\n'
@@ -68,7 +68,7 @@ def _setLinux(enabled: bool) -> None:
             "[Desktop Entry]\n"
             "Type=Application\n"
             f"Version={VERSION}\n"
-            "Name=Ghost Downloader 3\n"
+            "Name=iDownloader\n"
             "Comment=A multi-threading downloader with QThread based on PySide6\n"
             f'Exec="{EXECUTABLE_PATH}" --silence\n'
             "StartupNotify=false\n"

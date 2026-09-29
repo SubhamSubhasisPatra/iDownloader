@@ -36,7 +36,7 @@ targets:
         CFBundleDisplayName: iDownloader
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSHumanReadableCopyright: "GNU GPL v3. iDownloader is a fork of Ghost-Downloader-3 (© 2024-2026 XiaoYouChR); modifications © 2026 Subham Subhasis Patra."
+        NSHumanReadableCopyright: "© 2026 Subham Subhasis Patra. Licensed under the GNU GPL v3."
         UILaunchScreen: {}
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true

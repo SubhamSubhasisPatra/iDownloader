@@ -70,7 +70,7 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">目前平台無可用更新</string>
     <string name="engine_taskerrors_e365462d" formatted="false">此影片在您所在地區無法使用，請嘗試設定代理（{detail}）</string>
     <string name="engine_taskerrors_f5662126" formatted="false">年齡限制影片，需要登入。請透過瀏覽器擴充功能下載，或在設定中手動匯入 Cookie（{detail}）</string>
-    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS 阻止了存取下載目錄，請在 系統設定 &gt; 隱私與安全性 &gt; 完整磁碟存取權限 中新增 Ghost Downloader</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS 阻止了存取下載目錄，請在 系統設定 &gt; 隱私與安全性 &gt; 完整磁碟存取權限 中新增 iDownloader</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">取得二維碼失敗</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">該 eD2k 連結已在下載中</string>
 </resources>

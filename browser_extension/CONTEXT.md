@@ -1,4 +1,4 @@
-# Ghost Downloader Browser Extension
+# iDownloader Browser Extension
 
 Chromium / Firefox 浏览器扩展。捕获页面中的可下载资源，通过持久连接发送到桌面应用。
 

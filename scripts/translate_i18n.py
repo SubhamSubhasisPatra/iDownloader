@@ -46,7 +46,7 @@ LOCALES = {
 }
 
 SYSTEM_PROMPT_DESKTOP = """\
-将下载管理器 Ghost Downloader 3 的 UI 文本从简体中文翻译为 {locale_name}。
+将下载管理器 iDownloader 的 UI 文本从简体中文翻译为 {locale_name}。
 
 翻译「待翻译」中的每一条，参考「已有翻译」的术语和语气。
 占位符 {{0}} {{1}} 和 HTML 标签原样保留。\\n 保留在译文相同位置。
@@ -54,7 +54,7 @@ SYSTEM_PROMPT_DESKTOP = """\
 输出格式与输入相同：=== Context === 分组，每行 源文 = 译文。只输出「待翻译」部分。"""
 
 SYSTEM_PROMPT_BROWSER = """\
-将 Ghost Downloader 浏览器扩展的 UI 文本从简体中文翻译为 {locale_name}。
+将 iDownloader 浏览器扩展的 UI 文本从简体中文翻译为 {locale_name}。
 
 「已有翻译」格式：key = 源文 → 译文（参考术语和语气）
 「待翻译」格式：key = 源文（行尾 # 注释是上下文提示，保留原文）
@@ -64,7 +64,7 @@ SYSTEM_PROMPT_BROWSER = """\
 输出格式：每行 key = 译文。只输出「待翻译」部分。"""
 
 SYSTEM_PROMPT_ANDROID = """\
-将下载管理器 Ghost Downloader 3 的 Android 端 UI 文本从简体中文翻译为 {locale_name}。
+将下载管理器 iDownloader 的 Android 端 UI 文本从简体中文翻译为 {locale_name}。
 
 翻译「待翻译」中的每一条，参考「已有翻译」的术语和语气。
 占位符 %1$s %2$d %d%% 等原样保留。\\n 保留在译文相同位置。

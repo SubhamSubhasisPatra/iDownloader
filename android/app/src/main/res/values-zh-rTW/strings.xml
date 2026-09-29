@@ -200,19 +200,19 @@
     <string name="oobe_back">上一步</string>
     <string name="oobe_basic_subtitle">設定下載檔案的儲存位置</string>
     <string name="oobe_basic_title">基本設定</string>
-    <string name="oobe_complete_subtitle">Ghost Downloader 已準備好為你工作。
+    <string name="oobe_complete_subtitle">iDownloader 已準備好為你工作。
 你可以隨時在設定中調整所有選項。</string>
     <string name="oobe_complete_title">一切就緒</string>
     <string name="oobe_features_subtitle">依需求開啟，也可以稍後在設定中修改</string>
     <string name="oobe_features_title">常用功能</string>
     <string name="oobe_finish">開始使用</string>
     <string name="oobe_next">下一步</string>
-    <string name="oobe_permissions_subtitle">Ghost Downloader 需要以下權限才能正常運作</string>
+    <string name="oobe_permissions_subtitle">iDownloader 需要以下權限才能正常運作</string>
     <string name="oobe_skip">跳過全部</string>
     <string name="oobe_start">開始設定</string>
     <string name="oobe_welcome_subtitle">快速、智慧的下载管理器。
 接下來的幾個步驟將協助你完成基本設定。</string>
-    <string name="oobe_welcome_title">歡迎使用 Ghost Downloader</string>
+    <string name="oobe_welcome_title">歡迎使用 iDownloader</string>
     <string name="pack_bilibili">嗶哩嗶哩</string>
     <string name="pack_bittorrent">BitTorrent 下載</string>
     <string name="pack_ed2k">eD2k 下載</string>

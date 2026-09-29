@@ -15,8 +15,8 @@ from app.format import toReadableSize
 from app.signal_bus import signalBus
 
 
-class GhostIcon(FluentIconBase, Enum):
-    GHOST = "ghost"
+class TrayIcon(FluentIconBase, Enum):
+    MARK = "mark"
 
     def path(self, theme=Theme.AUTO) -> str:
         return ":/image/logo_menubar_template.png"
@@ -169,7 +169,7 @@ else:
 
 
 class SystemTrayIcon(QSystemTrayIcon):
-    NAME = "Ghost Downloader"
+    NAME = "iDownloader"
 
     def __init__(self, taskService, speedMeter, icon: QIcon, parent=None):
         super().__init__(icon, parent)
@@ -178,7 +178,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.setToolTip(self.NAME)
 
         self._menu = TrayMenu()
-        self._menu.addAction(Action(GhostIcon.GHOST, self.tr("仪表盘"), self._menu,
+        self._menu.addAction(Action(TrayIcon.MARK, self.tr("仪表盘"), self._menu,
                                     triggered=lambda: signalBus.activationRequested.emit()))
         self._menu.addAction(Action(FluentIcon.PLAY, self.tr("全部开始"), self._menu,
                                     triggered=self._taskService.startAll))

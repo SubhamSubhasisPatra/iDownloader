@@ -24,14 +24,14 @@ async def init(submit) -> None:
 
     iconPath = Path(QStandardPaths.writableLocation(
         QStandardPaths.StandardLocation.TempLocation
-    )) / "gd3_logo.png"
+    )) / "idownloader_logo.png"
     if not iconPath.exists():
         from PySide6.QtCore import QResource
         with open(iconPath, "wb") as f:
             f.write(QResource(":/image/logo.png").data())
 
     global notifier
-    notifier = DN(app_name="Ghost Downloader", app_icon=Icon(path=iconPath))
+    notifier = DN(app_name="iDownloader", app_icon=Icon(path=iconPath))
 
 
 def notifyDiskSpaceInsufficient(free: int, needed: int) -> None:

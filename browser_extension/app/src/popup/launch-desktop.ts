@@ -1,7 +1,7 @@
 export function launchDesktop(): void {
-  window.location.href = "ghostdownloader://launch";
+  window.location.href = "idownloader://launch";
 }
 
 export function wakeDesktop(): void {
-  window.location.href = "ghostdownloader://wake";
+  window.location.href = "idownloader://wake";
 }

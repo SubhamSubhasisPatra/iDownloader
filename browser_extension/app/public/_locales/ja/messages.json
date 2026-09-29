@@ -94,11 +94,11 @@
   "mediaButtonLabel": {
     "message": "メディアボタン"
   },
-  "downloadWithGhostDownloader": {
-    "message": "Ghost Downloader でダウンロード"
+  "downloadWithiDownloader": {
+    "message": "iDownloader でダウンロード"
   },
-  "saveAsWithGhostDownloader": {
-    "message": "Ghost Downloader で名前を付けて保存"
+  "saveAsWithiDownloader": {
+    "message": "iDownloader で名前を付けて保存"
   },
   "downloading": {
     "message": "ダウンロード中"
@@ -260,10 +260,10 @@
     "message": "ダウンロード引継ぎの更新に失敗しました"
   },
   "extensionDescription": {
-    "message": "Ghost Downloaderのタスクを管理し、ブラウザリソースをGhost Downloaderに送信します。"
+    "message": "iDownloaderのタスクを管理し、ブラウザリソースをiDownloaderに送信します。"
   },
   "extensionName": {
-    "message": "Ghost Downloader for Browser"
+    "message": "iDownloader for Browser"
   },
   "extensionVersionInfo": {
     "message": "拡張機能バージョン $1"
@@ -394,7 +394,7 @@
     "message": "マージ"
   },
   "mergeTaskSentToDesktop": {
-    "message": "オンラインマージタスクが Ghost Downloader に送信されました"
+    "message": "オンラインマージタスクが iDownloader に送信されました"
   },
   "minInterceptSize": {
     "message": "最小インターセプトサイズ"
@@ -536,7 +536,7 @@
     "message": "リソースをブラウザのダウンロードに渡しました"
   },
   "resourceSentToDesktop": {
-    "message": "リソースを Ghost Downloader に送信しました"
+    "message": "リソースを iDownloader に送信しました"
   },
   "restoringCapturedResources": {
     "message": "キャプチャ済みリソースを復元中"
@@ -589,11 +589,11 @@
   "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "送信 ($1)"
   },
-  "sendCurrentMediaToGhostDownloader": {
-    "message": "現在のメディアを Ghost Downloader に送信"
+  "sendCurrentMediaToiDownloader": {
+    "message": "現在のメディアを iDownloader に送信"
   },
   "sendToDesktop": {
-    "message": "Ghost Downloader に送信"
+    "message": "iDownloader に送信"
   },
   "sending": {
     "message": "送信中"
@@ -605,7 +605,7 @@
     "message": "ブラウザのダウンロードに渡しました"
   },
   "sentToDesktop": {
-    "message": "Ghost Downloader に送信しました"
+    "message": "iDownloader に送信しました"
   },
   "serverUrlSaved": {
     "message": "アドレスが保存されました"

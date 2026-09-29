@@ -1,0 +1,42 @@
+package io.github.subhamsubhasispatra.idownloader.ui.components.notice
+
+import android.content.Context
+import io.github.subhamsubhasispatra.idownloader.ui.navigation.DESTINATION_DRAFT
+import io.github.subhamsubhasispatra.idownloader.R
+import io.github.subhamsubhasispatra.idownloader.i18n.engineText
+import io.github.subhamsubhasispatra.idownloader.model.Notice
+import io.github.subhamsubhasispatra.idownloader.ui.navigation.toDestination
+import io.github.subhamsubhasispatra.idownloader.ui.util.formatSize
+
+data class NoticeMessage(val text: String, val action: String?, val destination: String?)
+
+fun Context.noticeMessage(notice: Notice): NoticeMessage = when (notice) {
+    is Notice.TaskCompleted -> NoticeMessage(
+        getString(R.string.notice_completed_inline, notice.name), null, null,
+    )
+
+    is Notice.TaskFailed -> NoticeMessage(
+        getString(R.string.notice_failed, notice.name) + "：" + engineText(notice.message, notice.params),
+        getString(R.string.notice_view),
+        toDestination(notice.taskId),
+    )
+
+    is Notice.DiskSpace -> NoticeMessage(
+        getString(R.string.notice_disk_space_desc, formatSize(notice.free), formatSize(notice.needed)),
+        null, null,
+    )
+
+    is Notice.DraftTaken -> NoticeMessage(
+        resources.getQuantityString(R.plurals.notice_draft_taken_desc, notice.count, notice.count),
+        getString(R.string.notice_view),
+        DESTINATION_DRAFT,
+    )
+
+    is Notice.ExtensionUpdated -> NoticeMessage(
+        getString(R.string.notice_extension_updated, notice.version), null, null,
+    )
+
+    is Notice.OverwriteFailed -> NoticeMessage(
+        getString(R.string.notice_overwrite_failed, notice.name), null, null,
+    )
+}

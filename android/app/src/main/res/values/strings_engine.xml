@@ -77,7 +77,7 @@
     <string name="engine_taskerrors_e365462d" formatted="false">该视频在您所在地区不可用，请尝试配置代理（{detail}）</string>
     <string name="engine_taskerrors_e446bb77" formatted="false">无法读取文件：{detail}</string>
     <string name="engine_taskerrors_f5662126" formatted="false">年龄限制视频，需要登录。请通过浏览器扩展下载或在设置中手动导入 Cookie（{detail}）</string>
-    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 iDownloader</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">获取二维码失败</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">该 eD2k 链接已在下载中</string>
     <string name="engine_taskstate_27b93035" formatted="false">分配文件中</string>

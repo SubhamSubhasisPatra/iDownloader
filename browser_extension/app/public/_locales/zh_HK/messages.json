@@ -94,11 +94,11 @@
   "mediaButtonLabel": {
     "message": "媒體按鈕"
   },
-  "downloadWithGhostDownloader": {
-    "message": "用 Ghost Downloader 下載"
+  "downloadWithiDownloader": {
+    "message": "用 iDownloader 下載"
   },
-  "saveAsWithGhostDownloader": {
-    "message": "用 Ghost Downloader 另存為"
+  "saveAsWithiDownloader": {
+    "message": "用 iDownloader 另存為"
   },
   "downloading": {
     "message": "下載中"
@@ -260,10 +260,10 @@
     "message": "更新接管下載失敗"
   },
   "extensionDescription": {
-    "message": "管理 Ghost Downloader 任務，將瀏覽器資源傳送到 Ghost Downloader。"
+    "message": "管理 iDownloader 任務，將瀏覽器資源傳送到 iDownloader。"
   },
   "extensionName": {
-    "message": "Ghost Downloader for Browser"
+    "message": "iDownloader for Browser"
   },
   "extensionVersionInfo": {
     "message": "擴充功能版本 $1"
@@ -394,7 +394,7 @@
     "message": "合併"
   },
   "mergeTaskSentToDesktop": {
-    "message": "線上合併任務已傳送至 Ghost Downloader"
+    "message": "線上合併任務已傳送至 iDownloader"
   },
   "minInterceptSize": {
     "message": "最小接管大小"
@@ -536,7 +536,7 @@
     "message": "資源已交給瀏覽器下載"
   },
   "resourceSentToDesktop": {
-    "message": "資源已傳送至 Ghost Downloader"
+    "message": "資源已傳送至 iDownloader"
   },
   "restoringCapturedResources": {
     "message": "正在恢復已捕捉的資源"
@@ -589,11 +589,11 @@
   "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "傳送 ($1)"
   },
-  "sendCurrentMediaToGhostDownloader": {
-    "message": "發送目前媒體至 Ghost Downloader"
+  "sendCurrentMediaToiDownloader": {
+    "message": "發送目前媒體至 iDownloader"
   },
   "sendToDesktop": {
-    "message": "傳送至 Ghost Downloader"
+    "message": "傳送至 iDownloader"
   },
   "sending": {
     "message": "正在傳送"
@@ -605,7 +605,7 @@
     "message": "已交給瀏覽器下載"
   },
   "sentToDesktop": {
-    "message": "已傳送至 Ghost Downloader"
+    "message": "已傳送至 iDownloader"
   },
   "serverUrlSaved": {
     "message": "地址已儲存"

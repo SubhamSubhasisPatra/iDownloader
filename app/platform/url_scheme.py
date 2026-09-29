@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-URL_SCHEME = "ghostdownloader"
+URL_SCHEME = "idownloader"
 
 
 def isLaunchUri(uri: str) -> bool:

@@ -200,19 +200,19 @@
     <string name="oobe_back">Back</string>
     <string name="oobe_basic_subtitle">Set download location</string>
     <string name="oobe_basic_title">Basic settings</string>
-    <string name="oobe_complete_subtitle">Ghost Downloader is ready to work for you.
+    <string name="oobe_complete_subtitle">iDownloader is ready to work for you.
 You can adjust all options anytime in settings.</string>
     <string name="oobe_complete_title">All set</string>
     <string name="oobe_features_subtitle">Enable as needed, can be changed later in settings</string>
     <string name="oobe_features_title">Common features</string>
     <string name="oobe_finish">Start using</string>
     <string name="oobe_next">Next</string>
-    <string name="oobe_permissions_subtitle">Ghost Downloader needs the following permissions to work properly</string>
+    <string name="oobe_permissions_subtitle">iDownloader needs the following permissions to work properly</string>
     <string name="oobe_skip">Skip all</string>
     <string name="oobe_start">Start setup</string>
     <string name="oobe_welcome_subtitle">Fast, smart download manager.
 The next steps will help you complete basic setup.</string>
-    <string name="oobe_welcome_title">Welcome to Ghost Downloader</string>
+    <string name="oobe_welcome_title">Welcome to iDownloader</string>
     <string name="pack_bilibili">Bilibili</string>
     <string name="pack_bittorrent">BitTorrent</string>
     <string name="pack_ed2k">eD2k</string>

@@ -125,7 +125,7 @@ jobs:
       - name: Build with Nuitka
         run: |
           echo "VERSION=${{ needs.prepare.outputs.version }}" >> $env:GITHUB_ENV
-          (Get-Content scripts/Ghost-Downloader-3.iss) -replace 'APPLICATION_VERSION', '${{ needs.prepare.outputs.version }}' | Set-Content scripts/Ghost-Downloader-3.iss
+          (Get-Content scripts/iDownloader.iss) -replace 'APPLICATION_VERSION', '${{ needs.prepare.outputs.version }}' | Set-Content scripts/iDownloader.iss
           uv run scripts/deploy.py
 
       - name: Build updater
@@ -134,7 +134,7 @@ jobs:
           $arch = if ("${{ matrix.architecture }}" -eq "arm64") { "ARM64" } else { "x64" }
           cmake -B build-updater -G "Visual Studio 17 2022" -A $arch tools/updater
           cmake --build build-updater --config Release
-          Copy-Item build-updater/Release/updater.exe dist/Ghost-Downloader-3.dist/
+          Copy-Item build-updater/Release/updater.exe dist/iDownloader.dist/
 
       - name: Download HDiffPatch
         shell: pwsh
@@ -142,20 +142,20 @@ jobs:
           $hdiffArch = if ("${{ matrix.architecture }}" -eq "arm64") { "windows_arm64" } else { "windows64" }
           Invoke-WebRequest -Uri "https://github.com/sisong/HDiffPatch/releases/download/v5.1.3/hdiffpatch_v5.1.3_bin_${hdiffArch}.zip" -OutFile hdiffpatch.zip
           Expand-Archive hdiffpatch.zip -DestinationPath hdiffpatch
-          Copy-Item hdiffpatch/${hdiffArch}/hpatchz.exe dist/Ghost-Downloader-3.dist/
+          Copy-Item hdiffpatch/${hdiffArch}/hpatchz.exe dist/iDownloader.dist/
 
       - name: Prepare For Sign
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         run: |
-          mv dist/Ghost-Downloader-3.dist dist/Ghost-Downloader-3-Unsigned.dist
+          mv dist/iDownloader.dist dist/iDownloader-Unsigned.dist
 
       - name: upload-unsigned-artifact
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
         id: upload-unsigned-artifact
         uses: actions/upload-artifact@v7
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
-          path: dist/Ghost-Downloader-3-Unsigned.dist
+          name: iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Unsigned
+          path: dist/iDownloader-Unsigned.dist
 
       - name: Sign binaries
         if: ${{ github.event.inputs.sign_artifact == 'true' }}
@@ -163,12 +163,12 @@ jobs:
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: 'Ghost-Downloader-3'
+          project-slug: 'iDownloader'
           signing-policy-slug: 'release-signing'
           artifact-configuration-slug: 'binaries'
           github-artifact-id: '${{ steps.upload-unsigned-artifact.outputs.artifact-id }}'
           wait-for-completion: true
-          output-artifact-directory: 'dist/Ghost-Downloader-3.dist'
+          output-artifact-directory: 'dist/iDownloader.dist'
 
       - name: Download Inno Setup Translation Files
         if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true' }}
@@ -189,15 +189,15 @@ jobs:
         if: ${{ github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true' }}
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.8
         with:
-          path: scripts/Ghost-Downloader-3.iss
+          path: scripts/iDownloader.iss
 
       - name: Upload unsigned installer
         if: ${{ github.event.inputs.sign_artifact == 'true' && (github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true') }}
         id: upload-unsigned-installer
         uses: actions/upload-artifact@v7
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Installer-Unsigned
-          path: dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe
+          name: iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Installer-Unsigned
+          path: dist/iDownloader-v${{ env.VERSION }}-Windows-Setup.exe
 
       - name: Sign installer
         if: ${{ github.event.inputs.sign_artifact == 'true' && (github.event.inputs.create_release == 'true' || github.event.inputs.package_installer == 'true') }}
@@ -205,7 +205,7 @@ jobs:
         with:
           api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
           organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: 'Ghost-Downloader-3'
+          project-slug: 'iDownloader'
           signing-policy-slug: 'release-signing'
           artifact-configuration-slug: 'installer'
           github-artifact-id: '${{ steps.upload-unsigned-installer.outputs.artifact-id }}'
@@ -216,23 +216,23 @@ jobs:
         if: ${{ github.event.inputs.create_release == 'false' && github.event.inputs.package_installer == 'true' }}
         shell: pwsh
         run: |
-          mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
+          mv dist/iDownloader-v${{ env.VERSION }}-Windows-Setup.exe dist/iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
       - name: Upload Installer
         if: ${{ github.event.inputs.create_release == 'false' && github.event.inputs.package_installer == 'true' }}
         uses: actions/upload-artifact@v7
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup
-          path: dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
+          name: iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup
+          path: dist/iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
       - name: Package release files
         if: ${{ github.event.inputs.create_release == 'true' }}
         shell: pwsh
         run: |
-          Push-Location dist/Ghost-Downloader-3.dist
-          7z a -tzip -mx=9 -m0=LZMA "$env:GITHUB_WORKSPACE/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip" *
+          Push-Location dist/iDownloader.dist
+          7z a -tzip -mx=9 -m0=LZMA "$env:GITHUB_WORKSPACE/iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip" *
           Pop-Location
-          mv dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-Setup.exe dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
+          mv dist/iDownloader-v${{ env.VERSION }}-Windows-Setup.exe dist/iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe
 
       - name: Generate delta patch
         if: ${{ github.event.inputs.create_release == 'true' && github.event.inputs.generate_delta == 'true' }}
@@ -254,15 +254,15 @@ jobs:
           7z x $prevZip.FullName
           Pop-Location
 
-          if (Test-Path "prev-extracted/dist/Ghost-Downloader-3.dist") {
-            $oldDir = "prev-extracted/dist/Ghost-Downloader-3.dist"
+          if (Test-Path "prev-extracted/dist/iDownloader.dist") {
+            $oldDir = "prev-extracted/dist/iDownloader.dist"
           } else {
             $oldDir = "prev-extracted"
           }
 
           $hdiffArch = if ("${{ matrix.architecture }}" -eq "arm64") { "windows_arm64" } else { "windows64" }
           $patchFile = "patch-Windows-${{ matrix.architecture }}-${prevVer}-to-${{ env.VERSION }}.hdiff"
-          & "hdiffpatch/${hdiffArch}/hdiffz.exe" -f "$oldDir" dist/Ghost-Downloader-3.dist "$patchFile"
+          & "hdiffpatch/${hdiffArch}/hdiffz.exe" -f "$oldDir" dist/iDownloader.dist "$patchFile"
           echo "PATCH_FILE=$patchFile" >> $env:GITHUB_ENV
 
       - name: Upload to release
@@ -272,8 +272,8 @@ jobs:
         shell: pwsh
         run: |
           $files = @(
-            "Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip",
-            "dist/Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe"
+            "iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}.zip",
+            "dist/iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}-Setup.exe"
           )
           if ($env:PATCH_FILE -and (Test-Path $env:PATCH_FILE)) { $files += $env:PATCH_FILE }
           gh release upload "v${{ env.VERSION }}" @files --clobber
@@ -282,9 +282,9 @@ jobs:
         if: ${{ github.event.inputs.create_release == 'false' }}
         uses: actions/upload-artifact@v7
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}
+          name: iDownloader-v${{ env.VERSION }}-Windows-${{ matrix.architecture }}
           path: |
-            dist/Ghost-Downloader-3.dist
+            dist/iDownloader.dist
 
   build-macos:
     needs: [prepare]
@@ -332,11 +332,11 @@ jobs:
           uv run scripts/deploy.py
           # framework Python (setup-python) 构建缺失冻结的 stdlib 子模块（如 http.cookies），
           # 必须确认链接的是 uv python-build-standalone 的 libpython
-          test -f "dist/Ghost-Downloader-3.app/Contents/MacOS/libpython3.13.dylib"
-          chmod +x "dist/Ghost-Downloader-3.app/Contents/MacOS/Ghost-Downloader-3"
-          rm -rf "dist/Ghost-Downloader-3.build"
-          rm -rf "dist/Ghost-Downloader-3.dist"
-          mv "dist/Ghost-Downloader-3.app" "dist/Ghost Downloader.app"
+          test -f "dist/iDownloader.app/Contents/MacOS/libpython3.13.dylib"
+          chmod +x "dist/iDownloader.app/Contents/MacOS/iDownloader"
+          rm -rf "dist/iDownloader.build"
+          rm -rf "dist/iDownloader.dist"
+          mv "dist/iDownloader.app" "dist/iDownloader.app"
           mv "app/assets/修复软件损坏" "dist/修复软件损坏"
           chmod +x "dist/修复软件损坏"
 
@@ -344,12 +344,12 @@ jobs:
         run: |
           cmake -B build-updater -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.architecture }} tools/updater
           cmake --build build-updater
-          cp build-updater/updater "dist/Ghost Downloader.app/Contents/MacOS/"
-          cp macos/hpatchz "dist/Ghost Downloader.app/Contents/MacOS/"
-          chmod +x "dist/Ghost Downloader.app/Contents/MacOS/hpatchz"
+          cp build-updater/updater "dist/iDownloader.app/Contents/MacOS/"
+          cp macos/hpatchz "dist/iDownloader.app/Contents/MacOS/"
+          chmod +x "dist/iDownloader.app/Contents/MacOS/hpatchz"
 
       - name: Restructure bundle for signing
-        run: uv run scripts/restructure_macos_bundle.py "dist/Ghost Downloader.app"
+        run: uv run scripts/restructure_macos_bundle.py "dist/iDownloader.app"
 
       - name: Import signing certificate
         if: ${{ env.HAS_APPLE_CERT == 'true' }}
@@ -382,7 +382,7 @@ jobs:
         run: |
           IDENTITY="Developer ID Application: ${{ secrets.APPLE_SIGN_NAME }} ($APPLE_TEAM_ID)"
 
-          find "dist/Ghost Downloader.app" -type f | while read -r f; do
+          find "dist/iDownloader.app" -type f | while read -r f; do
             if file -b "$f" | grep -q "Mach-O"; then
               codesign --force --options runtime --timestamp \
                 --entitlements scripts/entitlements.plist \
@@ -392,9 +392,9 @@ jobs:
 
           codesign --force --options runtime --timestamp \
             --entitlements scripts/entitlements.plist \
-            --sign "$IDENTITY" "dist/Ghost Downloader.app"
+            --sign "$IDENTITY" "dist/iDownloader.app"
 
-          codesign --verify --deep --strict "dist/Ghost Downloader.app"
+          codesign --verify --deep --strict "dist/iDownloader.app"
           echo "Signing complete."
 
       - name: Reinstall openssl libs
@@ -408,24 +408,24 @@ jobs:
 
       - name: Create DMG
         run: |
-          DMG_NAME="Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          DMG_NAME="iDownloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
           DMG_SOURCE_DIR="dist/dmg-layout"
 
           rm -rf "$DMG_SOURCE_DIR"
           mkdir -p "$DMG_SOURCE_DIR"
-          cp -R "dist/Ghost Downloader.app" "$DMG_SOURCE_DIR/"
+          cp -R "dist/iDownloader.app" "$DMG_SOURCE_DIR/"
           find "$DMG_SOURCE_DIR" -name ".DS_Store" -delete
 
           create-dmg \
-            --volname "Ghost Downloader" \
+            --volname "iDownloader" \
             --volicon "app/assets/logo.icns" \
             --background "app/assets/backgroundImage-2X.png" \
             --window-pos 200 120 \
             --window-size 664 404 \
             --icon-size 72 \
             --text-size 14 \
-            --icon "Ghost Downloader.app" 190 200 \
-            --hide-extension "Ghost Downloader.app" \
+            --icon "iDownloader.app" 190 200 \
+            --hide-extension "iDownloader.app" \
             --app-drop-link 370 200 \
             --add-file "修复软件损坏" "dist/修复软件损坏" 610 200 \
             --hdiutil-quiet \
@@ -440,7 +440,7 @@ jobs:
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          DMG_NAME="Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
+          DMG_NAME="iDownloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg"
           for attempt in 1 2 3; do
             echo "Notarization attempt $attempt"
             if xcrun notarytool submit "$DMG_NAME" \
@@ -485,7 +485,7 @@ jobs:
           OLD_COPY="dist/old-for-diff"
           NEW_COPY="dist/new-for-diff"
           cp -a "$OLD_APP" "$OLD_COPY"
-          cp -a "dist/Ghost Downloader.app" "$NEW_COPY"
+          cp -a "dist/iDownloader.app" "$NEW_COPY"
           find "$OLD_COPY/Contents/MacOS" -type l -delete 2>/dev/null || true
           find "$NEW_COPY/Contents/MacOS" -type l -delete 2>/dev/null || true
 
@@ -506,7 +506,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          FILES=("Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg")
+          FILES=("iDownloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg")
           if [ -n "$PATCH_FILE" ] && [ -f "$PATCH_FILE" ]; then FILES+=("$PATCH_FILE"); fi
           gh release upload "v${{ env.VERSION }}" "${FILES[@]}" --clobber
 
@@ -514,8 +514,8 @@ jobs:
         if: ${{ github.event.inputs.create_release == 'false' }}
         uses: actions/upload-artifact@v7
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
-          path: Ghost-Downloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
+          name: iDownloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}
+          path: iDownloader-v${{ env.VERSION }}-macOS-${{ matrix.architecture }}.dmg
 
   build-ubuntu:
     needs: [prepare]
@@ -552,19 +552,19 @@ jobs:
         run: |
           echo "VERSION=${{ needs.prepare.outputs.version }}" >> "$GITHUB_ENV"
           uv run scripts/deploy.py
-          chmod +x "dist/Ghost-Downloader-3.dist/Ghost-Downloader-3.bin"
+          chmod +x "dist/iDownloader.dist/iDownloader.bin"
 
       - name: Build .deb and .AppImage
         run: |
-          DIST_DIR="dist/Ghost-Downloader-3.dist"
+          DIST_DIR="dist/iDownloader.dist"
           DEB_ROOT="$RUNNER_TEMP/deb-root"
-          APPDIR="$RUNNER_TEMP/GhostDownloader.AppDir"
-          PACKAGE_NAME="ghost-downloader"
-          INSTALL_DIR="/opt/Ghost-Downloader-3"
+          APPDIR="$RUNNER_TEMP/iDownloader.AppDir"
+          PACKAGE_NAME="idownloader"
+          INSTALL_DIR="/opt/iDownloader"
           DESKTOP_FILE="$PACKAGE_NAME.desktop"
           ICON_FILE="$PACKAGE_NAME.png"
-          DEB_FILE="dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb"
-          APPIMAGE_FILE="dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage"
+          DEB_FILE="dist/iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb"
+          APPIMAGE_FILE="dist/iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage"
           APPIMAGETOOL_FILE="appimagetool-${{ matrix.appimage_arch }}.AppImage"
           APPIMAGETOOL_URL="https://github.com/AppImage/appimagetool/releases/latest/download/${APPIMAGETOOL_FILE}"
 
@@ -584,8 +584,8 @@ jobs:
           cp -R "$DIST_DIR"/. "$APPDIR/usr/lib/$PACKAGE_NAME/"
           cp /usr/lib/*/libzstd.so.1 "$APPDIR/usr/lib/$PACKAGE_NAME/"
 
-          ln -s "$INSTALL_DIR/Ghost-Downloader-3.bin" "$DEB_ROOT/usr/bin/$PACKAGE_NAME"
-          ln -s "../lib/$PACKAGE_NAME/Ghost-Downloader-3.bin" "$APPDIR/usr/bin/$PACKAGE_NAME"
+          ln -s "$INSTALL_DIR/iDownloader.bin" "$DEB_ROOT/usr/bin/$PACKAGE_NAME"
+          ln -s "../lib/$PACKAGE_NAME/iDownloader.bin" "$APPDIR/usr/bin/$PACKAGE_NAME"
           ln -s "usr/bin/$PACKAGE_NAME" "$APPDIR/AppRun"
 
           cat > "$DEB_ROOT/DEBIAN/control" <<EOF
@@ -595,14 +595,14 @@ jobs:
           Priority: optional
           Architecture: ${{ matrix.deb_arch }}
           Maintainer: XiaoYouChR <XiaoYouChR@qq.com>
-          Description: Ghost Downloader
+          Description: iDownloader
            A multi-threading downloader based on PySide6.
           EOF
 
           cat > "$DEB_ROOT/usr/share/applications/$DESKTOP_FILE" <<EOF
           [Desktop Entry]
           Type=Application
-          Name=Ghost Downloader
+          Name=iDownloader
           Comment=A multi-threading downloader based on PySide6
           Exec=$PACKAGE_NAME
           Icon=$PACKAGE_NAME
@@ -642,8 +642,8 @@ jobs:
         if: ${{ github.event.inputs.create_release == 'true' }}
         shell: pwsh
         run: |
-          $distPath = "dist/Ghost-Downloader-3.dist"
-          $tarFile = "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
+          $distPath = "dist/iDownloader.dist"
+          $tarFile = "iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz"
 
           Write-Output "Creating tar.xz archive of $distPath..."
           tar -cJf $tarFile -C $distPath .
@@ -655,20 +655,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "v${{ env.VERSION }}" \
-            "Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz" \
-            "dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb" \
-            "dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage" \
+            "iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.tar.xz" \
+            "dist/iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb" \
+            "dist/iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage" \
             --clobber
 
       - name: Upload artifacts
         if: ${{ github.event.inputs.create_release == 'false' }}
         uses: actions/upload-artifact@v7
         with:
-          name: Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
+          name: iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}
           path: |
-            dist/Ghost-Downloader-3.dist
-            dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb
-            dist/Ghost-Downloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage
+            dist/iDownloader.dist
+            dist/iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.deb
+            dist/iDownloader-v${{ env.VERSION }}-Linux-${{ matrix.architecture }}.AppImage
 
   android-libtorrent:
     if: ${{ github.event.inputs.build_target == 'android' || github.event.inputs.build_target == 'all' }}
@@ -834,7 +834,7 @@ jobs:
       - name: Rename APK
         run: |
           APK=$(ls android/app/build/outputs/apk/"$APK_VARIANT"/*.apk)
-          DEST="Ghost-Downloader-v${{ needs.prepare.outputs.version }}-Android-arm64-v8a.apk"
+          DEST="iDownloader-v${{ needs.prepare.outputs.version }}-Android-arm64-v8a.apk"
           mv "$APK" "$DEST"
           echo "APK_FILE=$DEST" >> "$GITHUB_ENV"
 
@@ -849,7 +849,7 @@ jobs:
         if: ${{ github.event.inputs.create_release == 'false' }}
         uses: actions/upload-artifact@v7
         with:
-          name: Ghost-Downloader-v${{ needs.prepare.outputs.version }}-Android-arm64-v8a
+          name: iDownloader-v${{ needs.prepare.outputs.version }}-Android-arm64-v8a
           path: ${{ env.APK_FILE }}
           if-no-files-found: error
 
@@ -908,7 +908,7 @@ jobs:
                       break
 
               ext = ".zip" if p.startswith("Windows") else ".dmg"
-              full_name = f"Ghost-Downloader-v{version}-{p}{ext}"
+              full_name = f"iDownloader-v{version}-{p}{ext}"
               full_path = os.path.join(assets_dir, full_name)
               if os.path.isfile(full_path):
                   full[p] = {"file": full_name, "sha256": sha256of(full_path), "size": os.path.getsize(full_path)}
@@ -937,7 +937,7 @@ jobs:
       - name: Purge jsDelivr cache
         run: |
           for f in versions.json dist/packs/*.zip; do
-            curl -s "https://purge.jsdelivr.net/gh/XiaoYouChR/Ghost-Downloader-3@main/${f}" || true
+            curl -s "https://purge.jsdelivr.net/gh/SubhamSubhasisPatra/iDownloader@main/${f}" || true
           done
 
       - name: Push to CNB
@@ -948,7 +948,7 @@ jobs:
         run: |
           if [ -z "$CNB_TOKEN" ]; then echo "No CNB_TOKEN, skipping"; exit 0; fi
           git fetch origin tag "v${VERSION}"
-          REMOTE="https://cnb:${CNB_TOKEN}@cnb.cool/XiaoYouChR/Ghost-Downloader-3"
+          REMOTE="https://cnb:${CNB_TOKEN}@cnb.cool/SubhamSubhasisPatra/iDownloader"
           git push "$REMOTE" main 2>&1 | sed "s/${CNB_TOKEN}/****/g" || true
 
       - name: Route GitCode to HK server
@@ -969,7 +969,7 @@ jobs:
         run: |
           if [ -z "$GITCODE_TOKEN" ]; then echo "No GITCODE_TOKEN, skipping"; exit 0; fi
           git fetch origin tag "v${VERSION}"
-          REMOTE="https://XiaoYouChR:${GITCODE_TOKEN}@gitcode.com/XiaoYouChR/Ghost-Downloader-3.git"
+          REMOTE="https://XiaoYouChR:${GITCODE_TOKEN}@gitcode.com/SubhamSubhasisPatra/iDownloader.git"
           git push "$REMOTE" main "v${VERSION}" 2>&1 | sed "s/${GITCODE_TOKEN}/****/g" || true
 
       - name: Mirror release to GitCode
@@ -981,7 +981,7 @@ jobs:
           if [ -z "$GITCODE_TOKEN" ]; then echo "No GITCODE_TOKEN, skipping mirror"; exit 0; fi
 
           API="https://api.gitcode.com/api/v5"
-          REPO="XiaoYouChR/Ghost-Downloader-3"
+          REPO="SubhamSubhasisPatra/iDownloader"
           TAG="v${VERSION}"
           AUTH="access_token=${GITCODE_TOKEN}"
 
@@ -1018,7 +1018,7 @@ jobs:
               -w "uploaded: ${name}  http=%{http_code}  bytes=%{size_upload}  time=%{time_total}s\n"
           }
 
-          for f in assets/patch-*.hdiff assets/Ghost-Downloader-v${VERSION}-*; do
+          for f in assets/patch-*.hdiff assets/iDownloader-v${VERSION}-*; do
             [ -f "$f" ] && { upload_file "$f" || echo "WARN: failed $f"; } &
           done
           wait

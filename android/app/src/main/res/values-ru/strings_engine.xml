@@ -70,7 +70,7 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">Для текущей платформы нет доступных обновлений</string>
     <string name="engine_taskerrors_e365462d" formatted="false">Это видео недоступно в вашем регионе, попробуйте настроить прокси ({detail})</string>
     <string name="engine_taskerrors_f5662126" formatted="false">Видео с возрастным ограничением, требуется вход. Загружайте через расширение браузера или импортируйте Cookie в настройках ({detail})</string>
-    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS заблокировал доступ к папке загрузки, добавьте Ghost Downloader в Системные настройки &gt; Конфиденциальность и безопасность &gt; Полный доступ к диску</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS заблокировал доступ к папке загрузки, добавьте iDownloader в Системные настройки &gt; Конфиденциальность и безопасность &gt; Полный доступ к диску</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">Не удалось получить QR-код</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">Эта eD2k-ссылка уже загружается</string>
 </resources>

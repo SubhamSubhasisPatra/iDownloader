@@ -5,7 +5,7 @@ from __future__ import annotations
 from .choices import buildAudioLanguageChoices, buildAudioTiers, buildSubtitleChoices, buildVideoTiers
 from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist, splitLanguages
 
-UI_CLASS = "com.xychr.ghostdownloader.features.yt_dlp_pack.YtDlpUi"
+UI_CLASS = "io.github.subhamsubhasispatra.idownloader.features.yt_dlp_pack.YtDlpUi"
 
 
 def toDraftOptions(pairs, **params) -> list[dict]:

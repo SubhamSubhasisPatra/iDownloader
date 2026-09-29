@@ -200,19 +200,19 @@
     <string name="oobe_back">戻る</string>
     <string name="oobe_basic_subtitle">ダウンロードファイルの保存場所を設定します</string>
     <string name="oobe_basic_title">基本設定</string>
-    <string name="oobe_complete_subtitle">Ghost Downloader は動作する準備ができました。
+    <string name="oobe_complete_subtitle">iDownloader は動作する準備ができました。
 すべてのオプションはいつでも設定で調整できます。</string>
     <string name="oobe_complete_title">準備完了</string>
     <string name="oobe_features_subtitle">必要に応じて有効にします。後で設定から変更できます</string>
     <string name="oobe_features_title">よく使う機能</string>
     <string name="oobe_finish">使い始める</string>
     <string name="oobe_next">次へ</string>
-    <string name="oobe_permissions_subtitle">Ghost Downloader が正常に動作するには以下の権限が必要です</string>
+    <string name="oobe_permissions_subtitle">iDownloader が正常に動作するには以下の権限が必要です</string>
     <string name="oobe_skip">すべてスキップ</string>
     <string name="oobe_start">設定を開始</string>
     <string name="oobe_welcome_subtitle">高速でスマートなダウンロードマネージャー。
 次の手順で基本設定を行います。</string>
-    <string name="oobe_welcome_title">Ghost Downloader へようこそ</string>
+    <string name="oobe_welcome_title">iDownloader へようこそ</string>
     <string name="pack_bilibili">ビリビリ</string>
     <string name="pack_bittorrent">BitTorrent ダウンロード</string>
     <string name="pack_ed2k">eD2k ダウンロード</string>

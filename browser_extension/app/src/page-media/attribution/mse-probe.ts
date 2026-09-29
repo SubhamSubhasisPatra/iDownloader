@@ -1,5 +1,5 @@
 /*
- * Ghost Downloader — MSE attribution probe (MAIN world).
+ * iDownloader — MSE attribution probe (MAIN world).
  * Proxy layout derived from cat-catch (catch-script/catch.js); upstream is GPL-3.0.
  * We post tagged, typed signals to the ISOLATED-world attribution engine instead of
  * capturing buffers. Built as a standalone IIFE bundle (see scripts/build.mjs).
@@ -12,9 +12,9 @@ declare global {
   }
 }
 
-type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
+type MediaXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
 
-(function installGhostDownloaderMseAttribution() {
+(function installiDownloaderMseAttribution() {
   if (window.__gdMseAttributionInstalled) { return; }
   window.__gdMseAttributionInstalled = true;
 
@@ -111,11 +111,11 @@ type GhostXMLHttpRequest = XMLHttpRequest & { __gdUrl?: string };
   try {
     const originalOpen = XMLHttpRequest.prototype.open;
     const originalSend = XMLHttpRequest.prototype.send;
-    XMLHttpRequest.prototype.open = function patchedOpen(this: GhostXMLHttpRequest, method: string, url: string | URL, ...rest: unknown[]): void {
+    XMLHttpRequest.prototype.open = function patchedOpen(this: MediaXMLHttpRequest, method: string, url: string | URL, ...rest: unknown[]): void {
       this.__gdUrl = String(url);
       return (originalOpen as (...args: unknown[]) => void).apply(this, [method, url, ...rest]);
     };
-    XMLHttpRequest.prototype.send = function patchedSend(this: GhostXMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
+    XMLHttpRequest.prototype.send = function patchedSend(this: MediaXMLHttpRequest, body?: Document | XMLHttpRequestBodyInit | null): void {
       const xhr = this;
       xhr.addEventListener("loadend", () => {
         const resolvedUrl = xhr.responseURL || xhr.__gdUrl || "";

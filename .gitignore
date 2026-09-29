@@ -41,7 +41,7 @@ browser_extension/firefox/
 /config/docs/research/
 
 # Marketing screenshot portable profile (scripts/marketing_shots.py)
-/GhostDownloader/
+/iDownloader/
 
 # iOS build artifacts (IPA / Mac archives stay in local dist)
 /ios/dist/

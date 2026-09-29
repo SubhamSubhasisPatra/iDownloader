@@ -29,22 +29,22 @@
     },
     "full": {
       "Windows-x86_64": {
-        "file": "Ghost-Downloader-v4.3.7-Windows-x86_64.zip",
+        "file": "iDownloader-v4.3.7-Windows-x86_64.zip",
         "sha256": "0ceb379d85592350534afd38e86385d90f11f2a7a74a8868506e23b47283221c",
         "size": 45804125
       },
       "Windows-arm64": {
-        "file": "Ghost-Downloader-v4.3.7-Windows-arm64.zip",
+        "file": "iDownloader-v4.3.7-Windows-arm64.zip",
         "sha256": "5bda4a0cf617a7a1b762d36e54a70bbfd33ee9e512f3d997d22366c8e857a25f",
         "size": 45748930
       },
       "macOS-arm64": {
-        "file": "Ghost-Downloader-v4.3.7-macOS-arm64.dmg",
+        "file": "iDownloader-v4.3.7-macOS-arm64.dmg",
         "sha256": "0e7cd8be0c11f8cc4d55cf5385238e5d5193f02efd0b5a144f82772d76667460",
         "size": 67382966
       },
       "macOS-x86_64": {
-        "file": "Ghost-Downloader-v4.3.7-macOS-x86_64.dmg",
+        "file": "iDownloader-v4.3.7-macOS-x86_64.dmg",
         "sha256": "c1c75e051e14fb02879cf29084105fa263e50253db960d8a4004dcdfdce0b4a7",
         "size": 72198396
       }

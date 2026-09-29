@@ -94,11 +94,11 @@
   "mediaButtonLabel": {
     "message": "Медиа"
   },
-  "downloadWithGhostDownloader": {
-    "message": "Скачать через Ghost Downloader"
+  "downloadWithiDownloader": {
+    "message": "Скачать через iDownloader"
   },
-  "saveAsWithGhostDownloader": {
-    "message": "Сохранить как через Ghost Downloader"
+  "saveAsWithiDownloader": {
+    "message": "Сохранить как через iDownloader"
   },
   "downloading": {
     "message": "Загрузка"
@@ -260,10 +260,10 @@
     "message": "Не удалось обновить перехват загрузок"
   },
   "extensionDescription": {
-    "message": "Управление задачами Ghost Downloader и отправка ресурсов браузера в Ghost Downloader."
+    "message": "Управление задачами iDownloader и отправка ресурсов браузера в iDownloader."
   },
   "extensionName": {
-    "message": "Ghost Downloader for Browser"
+    "message": "iDownloader for Browser"
   },
   "extensionVersionInfo": {
     "message": "Версия расширения $1"
@@ -394,7 +394,7 @@
     "message": "Объединить"
   },
   "mergeTaskSentToDesktop": {
-    "message": "Задача онлайн-объединения отправлена в Ghost Downloader"
+    "message": "Задача онлайн-объединения отправлена в iDownloader"
   },
   "minInterceptSize": {
     "message": "Минимальный размер перехвата"
@@ -536,7 +536,7 @@
     "message": "Ресурс передан браузеру для загрузки"
   },
   "resourceSentToDesktop": {
-    "message": "Ресурс отправлен в Ghost Downloader"
+    "message": "Ресурс отправлен в iDownloader"
   },
   "restoringCapturedResources": {
     "message": "Восстановление захваченных ресурсов"
@@ -589,11 +589,11 @@
   "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "Отправить ($1)"
   },
-  "sendCurrentMediaToGhostDownloader": {
-    "message": "Отправить текущее медиа в Ghost Downloader"
+  "sendCurrentMediaToiDownloader": {
+    "message": "Отправить текущее медиа в iDownloader"
   },
   "sendToDesktop": {
-    "message": "Отправить в Ghost Downloader"
+    "message": "Отправить в iDownloader"
   },
   "sending": {
     "message": "Отправка"
@@ -605,7 +605,7 @@
     "message": "Передано браузеру для загрузки"
   },
   "sentToDesktop": {
-    "message": "Отправлено в Ghost Downloader"
+    "message": "Отправлено в iDownloader"
   },
   "serverUrlSaved": {
     "message": "Адрес сохранён"

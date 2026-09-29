@@ -863,7 +863,7 @@ class TaskPage(QWidget):
     def _onFileDeleteDenied(self) -> None:
         bar = InfoBar.warning(
             self.tr("文件删除受限"),
-            self.tr("macOS 阻止了文件删除，请在 系统设置 > 隐私与安全性 > 完全磁盘访问权限 中添加 Ghost Downloader"),
+            self.tr("macOS 阻止了文件删除，请在 系统设置 > 隐私与安全性 > 完全磁盘访问权限 中添加 iDownloader"),
             duration=-1,
             position=InfoBarPosition.TOP,
             parent=self.window(),
