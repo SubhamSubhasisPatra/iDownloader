@@ -2,6 +2,9 @@
   <a href="README_zh.md">简体中文</a> | English
 </h4>
 
+> [!IMPORTANT]
+> **iDownloader** is a fork of [Ghost-Downloader-3](https://github.com/XiaoYouChR/Ghost-Downloader-3) (GPLv3), forked 2026-09-27 and maintained independently by [Subham Subhasis Patra](https://github.com/SubhamSubhasisPatra). It is not made by or endorsed by the original authors. Modification and licensing details: [NOTICE.md](NOTICE.md).
+
 > [!TIP]
 > Join the Ghost Downloader community on Discord: [discord.gg/fKfhkPumEM](https://discord.gg/fKfhkPumEM)
 
@@ -136,9 +139,12 @@ Thanks to all contributors who have participated in this project!
 <!-- LICENSE -->
 ## License
 
-Distributed under the GPL v3.0 License. Open `LICENSE` for more details.
+iDownloader is a **fork of [Ghost-Downloader-3](https://github.com/XiaoYouChR/Ghost-Downloader-3)** and is distributed under the GPL v3.0 License. Open `LICENSE` for more details.
 
-Copyright © 2024-2026 XiaoYouChR.
+* Original work **Ghost-Downloader-3**: Copyright © 2024–2026 XiaoYouChR.
+* **iDownloader** and its modifications: Copyright © 2026 Subham Subhasis Patra — see [NOTICE.md](NOTICE.md) for the GPLv3 modification notice and source-availability commitment.
+* Third-party components keep their own licenses: [ios/THIRD-PARTY-NOTICES.md](ios/THIRD-PARTY-NOTICES.md) for the iOS app.
+* Selling or redistributing iDownloader is permitted under GPLv3 terms — read [docs/distribution.md](docs/distribution.md) first.
 
 <!-- CONTACT -->
 ## Contact

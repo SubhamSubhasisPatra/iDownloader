@@ -243,6 +243,7 @@ build_libtorrent() {
     # Unset so CMake uses our explicit ARM64 Android paths instead.
     unset Python3_ROOT_DIR Python_ROOT_DIR Python2_ROOT_DIR
 
+    # 内部日志永远没人读，关掉减小 .so；LTO 跨翻译单元内联热路径
     cmake -B "$BUILD" \
         -DCMAKE_TOOLCHAIN_FILE="$NDK/build/cmake/android.toolchain.cmake" \
         -DANDROID_ABI="$ABI" \
@@ -273,6 +274,8 @@ build_libtorrent() {
         -DOPENSSL_USE_STATIC_LIBS=ON \
         -DCMAKE_MODULE_LINKER_FLAGS="$PYTHON_PREFIX/lib/libpython3.14.so" \
         -Dstatic_runtime=ON \
+        -Dlogging=OFF \
+        -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
         "$WORK_DIR/src/libtorrent-${LIBTORRENT_VERSION}"
 
     cmake --build "$BUILD" --target python-libtorrent -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu)" -- -s

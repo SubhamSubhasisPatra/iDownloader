@@ -37,7 +37,7 @@ class BitTorrentConfig(PackConfig):
     seedingTimeLimit = RangeConfigItem("BitTorrent", "SeedTimeLimitMinutes", 0, RangeValidator(0, 43200))
     maxConnections = RangeConfigItem("BitTorrent", "ConnectionsLimit", 500, RangeValidator(20, 2000))
     maxUploadSpeed = RangeConfigItem("BitTorrent", "UploadRateLimit", 0, RangeValidator(0, 1024 * 1024 * 100))
-    listenPort = RangeConfigItem("BitTorrent", "ListenPort", 0, RangeValidator(0, 65535))
+    listenPort = RangeConfigItem("BitTorrent", "ListenPort", 51413, RangeValidator(0, 65535))
     metadataTimeout = RangeConfigItem("BitTorrent", "MetadataTimeout", 60, RangeValidator(5, 300))
     enableSequentialDownload = ConfigItem("BitTorrent", "SequentialDownload", False, BoolValidator())
     storageMode = OptionsConfigItem(
@@ -64,7 +64,7 @@ class BitTorrentConfig(PackConfig):
 
         cards = [
             SpinBoxSettingCard(FluentIcon.GLOBE, self.tr("监听端口"),
-                self.tr("0 表示交给系统自动分配可用端口"), "", self.listenPort, btGroup, 1),
+                self.tr("0 表示交给系统自动分配。固定端口并在路由器上转发（或 UPnP 映射），其他 peer 才能主动连上来，低数量种子源时提升明显"), "", self.listenPort, btGroup, 1),
             SpinBoxSettingCard(FluentIcon.HISTORY, self.tr("元数据超时"),
                 self.tr("解析 magnet 链接时等待元数据的最长时间"), " s", self.metadataTimeout, btGroup, 5),
             RangeSettingCard(self.maxConnections, FluentIcon.PEOPLE, self.tr("连接数上限"),

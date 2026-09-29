@@ -7,6 +7,7 @@ import time
 from asyncio import TaskGroup, CancelledError
 from contextlib import suppress
 from dataclasses import field, dataclass
+from datetime import timedelta
 from pathlib import Path
 from struct import unpack, pack
 
@@ -18,6 +19,7 @@ from app.models.task import Task, TaskError, TaskStep, TaskStatus, SpecialFileSi
 from app.platform.sysio import ftruncate, pwrite
 
 STREAM_READ_TIMEOUT = 30
+PROBE_TIMEOUT = timedelta(seconds=30)
 SPLIT_START_INTERVAL = 0.2
 PERMANENT_STATUS = frozenset({400, 401, 403, 404, 405, 410, 451})
 FATAL_IO_ERRNO = frozenset({errno.ENOSPC, errno.EDQUOT, errno.EROFS, errno.EIO, 39, 112})
@@ -248,11 +250,10 @@ class HttpTaskStep(TaskStep):
         await asyncio.sleep(delay)
         if subworker.end == SpecialFileSize.UNKNOWN:
             while True:
-                client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
                     httpPos = self.httpByteOffset + subworker.position
                     headers = {**self._effectiveHeaders, "range": f"bytes={httpPos}-", "accept-encoding": "identity"}
-                    response = await client.get(self._effectiveUrl, headers=headers)
+                    response = await self._client.get(self._effectiveUrl, headers=headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -268,8 +269,9 @@ class HttpTaskStep(TaskStep):
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
                             await self._waitForSpeedLimit()
-                    finally:
-                        response.close()
+                    except BaseException:
+                        await response.close()
+                        raise
                     return
                 except CancelledError:
                     raise
@@ -280,16 +282,13 @@ class HttpTaskStep(TaskStep):
                         raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
-                finally:
-                    client.close()
 
         elif subworker.end == SpecialFileSize.NOT_SUPPORTED:
             while True:
-                client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
                     ftruncate(fd, 0)
                     subworker.receivedBytes = 0
-                    response = await client.get(self._effectiveUrl, headers=dict(self._effectiveHeaders))
+                    response = await self._client.get(self._effectiveUrl, headers=dict(self._effectiveHeaders))
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -303,8 +302,9 @@ class HttpTaskStep(TaskStep):
                             subworker.receivedBytes += len(chunk)
                             self._reportSpeed(len(chunk))
                             await self._waitForSpeedLimit()
-                    finally:
-                        response.close()
+                    except BaseException:
+                        await response.close()
+                        raise
                     ftruncate(fd, subworker.receivedBytes)
                     return
                 except CancelledError:
@@ -316,12 +316,9 @@ class HttpTaskStep(TaskStep):
                         raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
-                finally:
-                    client.close()
 
         else:
             while subworker.position <= subworker.end:
-                client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
                     httpPos = self.httpByteOffset + subworker.position
                     httpEnd = self.httpByteOffset + subworker.end
@@ -330,7 +327,7 @@ class HttpTaskStep(TaskStep):
                         "range": f"bytes={httpPos}-{httpEnd}",
                         "accept-encoding": "identity",
                     }
-                    response = await client.get(self._effectiveUrl, headers=headers)
+                    response = await self._client.get(self._effectiveUrl, headers=headers)
                     try:
                         status = response.status.as_int()
                         if status in PERMANENT_STATUS or response.headers.contains_key("cf-mitigated"):
@@ -351,8 +348,10 @@ class HttpTaskStep(TaskStep):
                             await self._waitForSpeedLimit()
                             if subworker.position > subworker.end:
                                 break
-                    finally:
-                        response.close()
+                    except BaseException:
+                        # close 会强制断开连接；正常读完的连接自动回池，供下个分片复用
+                        await response.close()
+                        raise
 
                     if subworker.position > subworker.end:
                         subworker.receivedBytes = subworker.end - subworker.start + 1
@@ -366,10 +365,19 @@ class HttpTaskStep(TaskStep):
                         raise
                     logger.opt(exception=e).error("下载分片失败，将在 5 秒后重试 {}", self.outputPath)
                     await asyncio.sleep(5)
-                finally:
-                    client.close()
 
             self._reassignSubworker()
+
+    async def _probe(self) -> None:
+        headers = {**self._effectiveHeaders, "range": "bytes=0-0", "accept-encoding": "identity"}
+        response = await self._client.get(self.url, headers=headers, timeout=PROBE_TIMEOUT)
+        self._effectiveUrl = str(response.url)
+        if response.status.as_int() == 206:
+            # 1 字节的 body 读完连接即回池，第一个分片直接复用这条热连接
+            async for _ in response.stream():
+                pass
+        else:
+            await response.close()
 
     async def run(self, reportSpeed, waitForSpeedLimit) -> None:
         self._reportSpeed = reportSpeed
@@ -385,89 +393,86 @@ class HttpTaskStep(TaskStep):
 
         self._emulation = toEmulation(self.clientProfile or cfg.clientProfile.value, "")
 
-        probeHeaders = {**self._effectiveHeaders, "range": "bytes=0-0", "accept-encoding": "identity"}
-        client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, timeout=30)
+        self._client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
         try:
-            response = await client.get(self.url, headers=probeHeaders)
-            self._effectiveUrl = str(response.url)
-            response.close()
-        finally:
-            client.close()
+            await self._probe()
 
-        restored = False
-        if self.canUseRangeRequests:
-            loaded = self._loadRecord()
-            if loaded:
-                self.subworkers = loaded
-                restored = True
+            restored = False
+            if self.canUseRangeRequests:
+                loaded = self._loadRecord()
+                if loaded:
+                    self.subworkers = loaded
+                    restored = True
 
-        if not restored:
+            if not restored:
+                if not self.canUseRangeRequests:
+                    self._deleteRecord()
+                self.subworkers = self._buildSubworkers()
+            elif self.fileSize > 0:
+                target = min(self.subworkerCount, self.fileSize)
+                while len(self.subworkers) < target:
+                    if not self._splitSlowest():
+                        break
+
+            openMode = os.O_RDWR | os.O_CREAT
             if not self.canUseRangeRequests:
-                self._deleteRecord()
-            self.subworkers = self._buildSubworkers()
-        elif self.fileSize > 0:
-            target = min(self.subworkerCount, self.fileSize)
-            while len(self.subworkers) < target:
-                if not self._splitSlowest():
-                    break
+                openMode |= os.O_TRUNC
+            self._fd = os.open(self.outputPath, openMode, 0o666)
 
-        openMode = os.O_RDWR | os.O_CREAT
-        if not self.canUseRangeRequests:
-            openMode |= os.O_TRUNC
-        self._fd = os.open(self.outputPath, openMode, 0o666)
-
-        if not restored and self.fileSize > 0:
-            try:
-                ftruncate(self._fd, self.fileSize)
-            except Exception as e:
-                logger.opt(exception=e).error("{} 预分配文件大小失败", self.outputPath)
-
-        try:
-            while True:
-                supervisor = asyncio.create_task(self._supervise())
+            if not restored and self.fileSize > 0:
                 try:
-                    self._taskGroup = TaskGroup()
-                    async with self._taskGroup:
-                        for subworker in self.subworkers:
-                            self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
+                    ftruncate(self._fd, self.fileSize)
+                except Exception as e:
+                    logger.opt(exception=e).error("{} 预分配文件大小失败", self.outputPath)
 
-                    shouldDeleteRecord = True
-                    break
-                except CancelledError:
-                    self.setStatus(TaskStatus.PAUSED)
-                    raise
-                except ExceptionGroup as eg:
-                    if self.canUseRangeRequests and any(
-                        isinstance(e, RangeNotSupportedError) for e in eg.exceptions
-                    ):
-                        logger.warning("服务器不支持范围请求，降级为单流下载 {}", self.outputPath)
-                        self.canUseRangeRequests = False
-                        self.subworkers = self._buildSubworkers()
-                        ftruncate(self._fd, 0)
-                        self._deleteRecord()
-                        self._speedHistory.clear()
-                        self._accelCheckTime = 0
-                        continue
-
-                    cause = eg.exceptions[0]
-                    if isinstance(cause, PermanentDownloadError):
-                        raise TaskError("服务器返回了错误（{status}）", status=cause.status) from eg
-                    if isinstance(cause, OSError) and cause.errno in FATAL_IO_ERRNO:
-                        raise TaskError("磁盘空间不足") from eg
-                    raise cause from eg
-                finally:
-                    if not supervisor.done():
-                        supervisor.cancel()
-                        with suppress(CancelledError):
-                            await supervisor
-        finally:
-            os.close(self._fd)
-            if shouldDeleteRecord:
-                self._deleteRecord()
-                if cfg.shouldPreserveLastModified.value and self.lastModified:
+            try:
+                while True:
+                    supervisor = asyncio.create_task(self._supervise())
                     try:
-                        from email.utils import parsedate_to_datetime
-                        mtime = parsedate_to_datetime(self.lastModified).timestamp()
-                        os.utime(self.outputPath, (mtime, mtime))
-                    except Exception as e:
-                        logger.opt(exception=e).warning("设置文件修改时间失败 {}", self.outputPath)
+                        self._taskGroup = TaskGroup()
+                        async with self._taskGroup:
+                            for subworker in self.subworkers:
+                                self._taskGroup.create_task(self._runSubworker(subworker, self._fd))
+
+                        shouldDeleteRecord = True
+                        break
+                    except CancelledError:
+                        self.setStatus(TaskStatus.PAUSED)
+                        raise
+                    except ExceptionGroup as eg:
+                        if self.canUseRangeRequests and any(
+                            isinstance(e, RangeNotSupportedError) for e in eg.exceptions
+                        ):
+                            logger.warning("服务器不支持范围请求，降级为单流下载 {}", self.outputPath)
+                            self.canUseRangeRequests = False
+                            self.subworkers = self._buildSubworkers()
+                            ftruncate(self._fd, 0)
+                            self._deleteRecord()
+                            self._speedHistory.clear()
+                            self._accelCheckTime = 0
+                            continue
+
+                        cause = eg.exceptions[0]
+                        if isinstance(cause, PermanentDownloadError):
+                            raise TaskError("服务器返回了错误（{status}）", status=cause.status) from eg
+                        if isinstance(cause, OSError) and cause.errno in FATAL_IO_ERRNO:
+                            raise TaskError("磁盘空间不足") from eg
+                        raise cause from eg
+                    finally:
+                        if not supervisor.done():
+                            supervisor.cancel()
+                            with suppress(CancelledError):
+                                await supervisor
+            finally:
+                os.close(self._fd)
+                if shouldDeleteRecord:
+                    self._deleteRecord()
+                    if cfg.shouldPreserveLastModified.value and self.lastModified:
+                        try:
+                            from email.utils import parsedate_to_datetime
+                            mtime = parsedate_to_datetime(self.lastModified).timestamp()
+                            os.utime(self.outputPath, (mtime, mtime))
+                        except Exception as e:
+                            logger.opt(exception=e).warning("设置文件修改时间失败 {}", self.outputPath)
+        finally:
+            self._client.close()
