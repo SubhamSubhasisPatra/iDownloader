@@ -54,7 +54,7 @@ channel works as long as the source link and license travel with the binary.
 ## Don'ts
 
 - Don't distribute through the App Store/TestFlight (see table above).
-- Don't claim the original Ghost Downloader authors endorse iDownloader.
+- Don't remove the copyright notices in NOTICE.md or the GPLv3 license.
 - Don't accept proprietary-only components into the app (e.g., a closed SDK that bans
   GPL'd distribution).
 - Don't remove upstream's copyright notices or the GPLv3 license file.

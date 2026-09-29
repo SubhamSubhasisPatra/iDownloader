@@ -48,7 +48,7 @@ class Bridge:
     def __init__(self, flows):
         from app.config.paths import APP_DATA_DIR
 
-        logger.add(f"{APP_DATA_DIR}/GhostDownloader.log", rotation="512 KB", retention=3)
+        logger.add(f"{APP_DATA_DIR}/iDownloader.log", rotation="512 KB", retention=3)
         cfg.load(f"{APP_DATA_DIR}/UserConfig.json")
 
         from app.engine import Engine

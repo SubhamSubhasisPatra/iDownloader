@@ -70,7 +70,7 @@
     <string name="engine_taskerrors_e17a3f49" formatted="false">現在のプラットフォームに利用可能な更新はありません</string>
     <string name="engine_taskerrors_e365462d" formatted="false">この動画はあなたの地域では利用できません。プロキシを設定してください（{detail}）</string>
     <string name="engine_taskerrors_f5662126" formatted="false">年齢制限動画、ログインが必要です。ブラウザ拡張でダウンロードするか、設定で手動でCookieをインポートしてください（{detail}）</string>
-    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS がダウンロードディレクトリへのアクセスをブロックしました。システム設定 &gt; プライバシーとセキュリティ &gt; フルディスクアクセス で Ghost Downloader を追加してください</string>
+    <string name="engine_taskerrors_f8b419f2" formatted="false">macOS がダウンロードディレクトリへのアクセスをブロックしました。システム設定 &gt; プライバシーとセキュリティ &gt; フルディスクアクセス で iDownloader を追加してください</string>
     <string name="engine_taskerrors_fa6f8c0f" formatted="false">QRコードの取得に失敗</string>
     <string name="engine_taskerrors_fdd52c36" formatted="false">この eD2k リンクは既にダウンロード中です</string>
 </resources>

@@ -54,7 +54,7 @@ def _registerWindows(fileTypes: list[FileType]) -> None:
     for fileType in fileTypes:
         iconPath = str(EXECUTABLE_DIR / "app" / "assets" / "file_icons" / f"{fileType.icon}.ico").replace("/", "\\")
         for ext in fileType.extensions:
-            progId = f"GhostDownloader{ext}"
+            progId = f"iDownloader{ext}"
             for regPath, regValue in (
                 (rf"Software\Classes\{progId}", fileType.displayName),
                 (rf"Software\Classes\{progId}\DefaultIcon", iconPath),
@@ -72,7 +72,7 @@ def _registerUrlSchemeWindows(scheme: str) -> None:
     regRoot = rf"Software\Classes\{scheme}"
     command = f'"{EXECUTABLE_PATH}" "%1"'
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, regRoot) as key:
-        winreg.SetValueEx(key, "", 0, winreg.REG_SZ, f"Ghost Downloader URL ({scheme})")
+        winreg.SetValueEx(key, "", 0, winreg.REG_SZ, f"iDownloader URL ({scheme})")
         winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, "")
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"{regRoot}\shell\open\command") as key:
         winreg.SetValueEx(key, "", 0, winreg.REG_SZ, command)
@@ -116,9 +116,9 @@ def saveMimeTypes(mimes: set[str]) -> None:
         desktopFile.write_text(
             "[Desktop Entry]\n"
             "Type=Application\n"
-            "Name=Ghost Downloader\n"
+            "Name=iDownloader\n"
             f'Exec="{EXECUTABLE_PATH}" %U\n'
-            "Icon=ghost-downloader\n"
+            "Icon=idownloader\n"
             "Terminal=false\n"
             "Categories=Network;Utility;\n"
             "DBusActivatable=true\n"

@@ -308,7 +308,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ghost-downloader-3"
+name = "idownloader"
 version = "4.3.5"
 source = { virtual = "." }
 dependencies = [

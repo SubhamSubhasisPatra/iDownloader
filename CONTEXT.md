@@ -1,4 +1,4 @@
-# Ghost Downloader
+# iDownloader
 
 基于 PySide6 的多协议下载器。桌面端（Windows、macOS、Linux）和 Android 共享同一业务引擎，浏览器扩展捕获资源并发送到应用。
 
@@ -163,8 +163,8 @@ _Avoid_: options（options 是每个 Task 的输入，不是应用配置）
 _Avoid_: install dir、program folder
 
 **Portable Folder**:
-App Dir 内名为 `GhostDownloader` 的目录。Portable 模式下数据住在这里。
-_Avoid_: 单独说 GhostDownloader 文件夹
+App Dir 内名为 `iDownloader` 的目录。Portable 模式下数据住在这里。
+_Avoid_: 单独说 iDownloader 文件夹
 
 **Seed Features**:
 App Dir 内 `features/` 目录。只读的出厂默认 Pack 集合，运行时不修改。

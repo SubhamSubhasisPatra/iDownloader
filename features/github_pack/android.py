@@ -1,6 +1,6 @@
 from http_pack.android import editFields
 
-UI_CLASS = "com.xychr.ghostdownloader.features.github_pack.GitHubUi"
+UI_CLASS = "io.github.subhamsubhasispatra.idownloader.features.github_pack.GitHubUi"
 
 def proxySiteList() -> list:
     from .config import GITHUB_PROXY_SITES

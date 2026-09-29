@@ -2,7 +2,7 @@ Status: accepted — implemented at https://github.com/XiaoYouChR/Ghost-Download
 
 # Ship a minimal, LGPL, self-built FFmpeg instead of a full prebuilt
 
-Ghost Downloader bundles FFmpeg for three jobs only: stream-copy remux
+iDownloader bundles FFmpeg for three jobs only: stream-copy remux
 (`bili_pack`, `ffmpeg_pack`), muxing + AES-128 decryption driven by N_m3u8DL-RE
 (`m3u8_pack`), and yt-dlp post-processing (merge bestvideo+bestaudio, embed
 metadata/chapters/thumbnail). **No call site ever transcodes audio or video.**

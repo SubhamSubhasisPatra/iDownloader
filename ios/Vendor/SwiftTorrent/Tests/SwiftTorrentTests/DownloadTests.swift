@@ -139,7 +139,10 @@ final class PieceManagerBlockTests: XCTestCase {
         XCTAssertEqual(buffer?.count, 32768)
 
         let verified = await pm.completePiece(0)
-        XCTAssertTrue(verified)
+        guard case .verified = verified else {
+            XCTFail("expected verified piece")
+            return
+        }
         let has = await pm.hasPiece(0)
         XCTAssertTrue(has)
         let inProg2 = await pm.isInProgress(0)
@@ -155,7 +158,10 @@ final class PieceManagerBlockTests: XCTestCase {
         await pm.addBlock(pieceIndex: 0, offset: 0, data: Data(repeating: 0xFF, count: 16384))
 
         let verified = await pm.completePiece(0)
-        XCTAssertFalse(verified)
+        guard case .corrupt = verified else {
+            XCTFail("expected corrupt piece")
+            return
+        }
         let has = await pm.hasPiece(0)
         XCTAssertFalse(has)
         let inProg = await pm.isInProgress(0)
@@ -232,7 +238,7 @@ final class MetadataExchangeTests: XCTestCase {
             (key: Data("metadata_size".utf8), value: .integer(Int64(infoData.count)))
         ]))
 
-        let result1 = await metaEx.handleExtendedMessage(id: 0, payload: peerHandshake)
+        let result1 = await metaEx.handleExtendedHandshake(payload: peerHandshake)
         if case .requestMore(let messages) = result1 {
             XCTAssertEqual(messages.count, 1)
         } else {
@@ -247,7 +253,7 @@ final class MetadataExchangeTests: XCTestCase {
         var fullPayload = pieceResponse
         fullPayload.append(infoData)
 
-        let result2 = await metaEx.handleExtendedMessage(id: 1, payload: fullPayload)
+        let result2 = await metaEx.handleMetadataPayload(payload: fullPayload)
         if case .metadataComplete(let torrentInfo) = result2 {
             XCTAssertEqual(torrentInfo.name, "test.txt")
             XCTAssertEqual(torrentInfo.totalSize, 1024)

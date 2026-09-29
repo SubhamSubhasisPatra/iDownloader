@@ -13,7 +13,7 @@ from .account import (
     QR_UNSCANNED,
 )
 
-UI_CLASS = "com.xychr.ghostdownloader.features.bili_pack.BilibiliUi"
+UI_CLASS = "io.github.subhamsubhasispatra.idownloader.features.bili_pack.BilibiliUi"
 
 
 def qualityOptions() -> list[dict]:

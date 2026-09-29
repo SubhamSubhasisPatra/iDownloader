@@ -10,7 +10,7 @@ const appRoot = path.resolve(__dirname, "..");
 const upstreamDir = path.resolve(appRoot, "../upstream");
 const catchScriptDir = path.resolve(upstreamDir, "catch-script");
 const upstreamContentScript = path.resolve(upstreamDir, "js/content-script.js");
-const firefoxAddonId = "ghostdownloader@github.com";
+const firefoxAddonId = "idownloader@github.com";
 const manifestTemplate = JSON.parse(
   await readFile(path.resolve(appRoot, "public/manifest.json"), "utf8"),
 );

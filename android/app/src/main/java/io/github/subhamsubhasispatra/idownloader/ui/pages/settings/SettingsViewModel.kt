@@ -1,0 +1,33 @@
+package io.github.subhamsubhasispatra.idownloader.ui.pages.settings
+
+import io.github.subhamsubhasispatra.idownloader.bridge.bridge
+import io.github.subhamsubhasispatra.idownloader.model.Settings
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
+
+private val settingsJson = Json { ignoreUnknownKeys = true }
+
+class SettingsViewModel : ViewModel() {
+
+    val config: StateFlow<JsonObject?> =
+        bridge.observe<JsonObject>("settings")
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val settings: StateFlow<Settings?> = config
+        .map { it?.let { settingsJson.decodeFromJsonElement<Settings>(it) } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    fun set(name: String, value: Any) {
+        viewModelScope.launch {
+            bridge.invoke("setSetting", name, value)
+        }
+    }
+}

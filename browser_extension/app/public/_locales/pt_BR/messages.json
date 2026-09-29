@@ -94,11 +94,11 @@
   "mediaButtonLabel": {
     "message": "Mídia"
   },
-  "downloadWithGhostDownloader": {
-    "message": "Baixar com Ghost Downloader"
+  "downloadWithiDownloader": {
+    "message": "Baixar com iDownloader"
   },
-  "saveAsWithGhostDownloader": {
-    "message": "Salvar como com Ghost Downloader"
+  "saveAsWithiDownloader": {
+    "message": "Salvar como com iDownloader"
   },
   "downloading": {
     "message": "Baixando"
@@ -260,10 +260,10 @@
     "message": "Falha ao atualizar assunção de downloads"
   },
   "extensionDescription": {
-    "message": "Gerencie tarefas do Ghost Downloader e envie recursos do navegador para o Ghost Downloader."
+    "message": "Gerencie tarefas do iDownloader e envie recursos do navegador para o iDownloader."
   },
   "extensionName": {
-    "message": "Ghost Downloader for Browser"
+    "message": "iDownloader for Browser"
   },
   "extensionVersionInfo": {
     "message": "Versão da extensão $1"
@@ -394,7 +394,7 @@
     "message": "Mesclar"
   },
   "mergeTaskSentToDesktop": {
-    "message": "Tarefa de mesclagem online enviada para Ghost Downloader"
+    "message": "Tarefa de mesclagem online enviada para iDownloader"
   },
   "minInterceptSize": {
     "message": "Tamanho mínimo para interceptação"
@@ -536,7 +536,7 @@
     "message": "Recurso enviado ao navegador para download"
   },
   "resourceSentToDesktop": {
-    "message": "Recurso enviado para Ghost Downloader"
+    "message": "Recurso enviado para iDownloader"
   },
   "restoringCapturedResources": {
     "message": "Restaurando recursos capturados"
@@ -589,11 +589,11 @@
   "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "Enviar ($1)"
   },
-  "sendCurrentMediaToGhostDownloader": {
-    "message": "Enviar mídia atual para Ghost Downloader"
+  "sendCurrentMediaToiDownloader": {
+    "message": "Enviar mídia atual para iDownloader"
   },
   "sendToDesktop": {
-    "message": "Enviar para Ghost Downloader"
+    "message": "Enviar para iDownloader"
   },
   "sending": {
     "message": "Enviando"
@@ -605,7 +605,7 @@
     "message": "Enviado ao navegador para download"
   },
   "sentToDesktop": {
-    "message": "Enviado para Ghost Downloader"
+    "message": "Enviado para iDownloader"
   },
   "serverUrlSaved": {
     "message": "Endereço salvo"

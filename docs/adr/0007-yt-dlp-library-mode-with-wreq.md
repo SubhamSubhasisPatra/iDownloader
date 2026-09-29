@@ -28,7 +28,7 @@ Switch yt_dlp_pack from subprocess mode to **library mode, extract-only**:
   resources that do not require browser TLS fingerprinting. No custom
   `RequestHandler` is needed — urllib is synchronous, thread-safe, and works
   naturally inside `asyncio.to_thread()`.
-- **Download:** hand the solved URLs to Ghost-Downloader's own
+- **Download:** hand the solved URLs to iDownloader's own
   `FFmpegResourceStep` (extends `HttpTaskStep`) + wreq. Global rate limiting,
   range-request resume, and browser fingerprint emulation are controlled at this
   layer. yt-dlp's `downloader/` module is never invoked.

@@ -3,7 +3,7 @@
 from app.i18n import N
 from app.models.task import TaskStatus
 
-UI_CLASS = "com.xychr.ghostdownloader.features.m3u8_pack.M3u8Ui"
+UI_CLASS = "io.github.subhamsubhasispatra.idownloader.features.m3u8_pack.M3u8Ui"
 
 
 def editFields(task) -> dict:

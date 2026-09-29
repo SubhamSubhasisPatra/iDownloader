@@ -10,6 +10,6 @@ Copyright 2025 Kyant
 https://github.com/Kyant0/AndroidLiquidGlass
 Apache License 2.0: AndroidLiquidGlass-Apache-2.0.txt
 
-Ghost Downloader adaptations: two existing navigation destinations, theme
+iDownloader adaptations: two existing navigation destinations, theme
 integration, accessible stationary hit targets, gesture cancellation, animation
 lifecycle handling, large-font sizing, and page-content clearance.

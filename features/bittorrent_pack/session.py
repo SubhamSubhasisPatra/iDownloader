@@ -192,7 +192,7 @@ class BTSession:
         params.trackers = list(dict.fromkeys(
             t for g in (params.trackers, trackers) for t in g if t
         ))
-        tempDir = Path(gettempdir()) / "ghost_downloader_bt_metadata"
+        tempDir = Path(gettempdir()) / "idownloader_bt_metadata"
         tempDir.mkdir(parents=True, exist_ok=True)
         params.save_path = str(tempDir)
         params.storage_mode = lt.storage_mode_t.storage_mode_sparse
@@ -283,7 +283,7 @@ class BTSession:
             from app.config.constants import VERSION
             params = self._loadDhtState()
             params.settings = {
-                "user_agent": f"GhostDownloader/{VERSION} libtorrent/{lt.__version__}",
+                "user_agent": f"iDownloader/{VERSION} libtorrent/{lt.__version__}",
                 "listen_interfaces": (
                     f"0.0.0.0:{bittorrentConfig.listenPort.value},"
                     f"[::]:{bittorrentConfig.listenPort.value}"

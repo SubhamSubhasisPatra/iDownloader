@@ -141,14 +141,14 @@ def buildArgs() -> list[str]:
             '--msvc=latest',
             '--windows-icon-from-ico=app/assets/logo.ico',
             '--include-data-dir=app/assets/file_icons=app/assets/file_icons',
-            '--company-name=XiaoYouChR',
-            '--product-name="Ghost Downloader"',
+            '--company-name="Subham Subhasis Patra"',
+            '--product-name="iDownloader"',
             f'--file-version={BUILD_VERSION}',
             f'--product-version={BUILD_VERSION}',
-            '--file-description="Ghost Downloader"',
+            '--file-description="iDownloader"',
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
-            'Ghost-Downloader-3.py',
+            'iDownloader.py',
         ]
 
     if sys.platform == "darwin":
@@ -167,7 +167,7 @@ def buildArgs() -> list[str]:
             "--macos-app-icon=app/assets/logo.icns",
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
-            'Ghost-Downloader-3.py',
+            'iDownloader.py',
         ]
 
     return [
@@ -181,7 +181,7 @@ def buildArgs() -> list[str]:
         '--assume-yes-for-downloads',
         '--linux-icon=app/assets/logo.png',
         '--output-dir=dist',
-        'Ghost-Downloader-3.py',
+        'iDownloader.py',
     ]
 
 
@@ -208,9 +208,9 @@ def copyPacks() -> None:
         raise RuntimeError("No feature packs were found to copy.")
 
     if sys.platform == "darwin":
-        targetRoot = Path("dist") / "Ghost-Downloader-3.app" / "Contents" / "MacOS" / "features"
+        targetRoot = Path("dist") / "iDownloader.app" / "Contents" / "MacOS" / "features"
     else:
-        targetRoot = Path("dist") / "Ghost-Downloader-3.dist" / "features"
+        targetRoot = Path("dist") / "iDownloader.dist" / "features"
 
     if not targetRoot.parent.exists():
         raise FileNotFoundError(f"dist directory does not exist: {targetRoot.parent}")
@@ -227,7 +227,7 @@ def copyPacks() -> None:
 
 
 def patchInfoPlist() -> None:
-    appBundle = Path("dist") / "Ghost-Downloader-3.app"
+    appBundle = Path("dist") / "iDownloader.app"
     plistPath = appBundle / "Contents" / "Info.plist"
     resourcesDir = appBundle / "Contents" / "Resources"
     resourcesDir.mkdir(parents=True, exist_ok=True)
@@ -250,10 +250,10 @@ def patchInfoPlist() -> None:
         plist = plistlib.load(f)
     plist["CFBundleDocumentTypes"] = documentTypes
     plist["CFBundleIdentifier"] = DESKTOP_ID
-    plist["NSDownloadsFolderUsageDescription"] = "Ghost Downloader 需要访问下载文件夹以管理和删除下载的文件。"
+    plist["NSDownloadsFolderUsageDescription"] = "iDownloader 需要访问下载文件夹以管理和删除下载的文件。"
     plist["CFBundleURLTypes"] = [{
         "CFBundleURLName": DESKTOP_ID,
-        "CFBundleURLSchemes": ["ghostdownloader", "magnet", "ed2k", "ftp", "ftps"],
+        "CFBundleURLSchemes": ["idownloader", "magnet", "ed2k", "ftp", "ftps"],
     }]
     with open(plistPath, "wb") as f:
         plistlib.dump(plist, f)

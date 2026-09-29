@@ -49,8 +49,7 @@ public actor TorrentHandle {
         self.dhtNode = dhtNode
         self.peerManager = PeerManager(
             infoHash: hash.bytes, peerID: peerID, group: group,
-            maxConnections: settings.maxConnectionsPerTorrent
-        )
+            maxConnections: settings.maxConnectionsPerTorrent)
 
         if let magnet = params.magnetLink, !magnet.trackers.isEmpty {
             let tiers = magnet.trackers.map { [$0] }
@@ -72,10 +71,15 @@ public actor TorrentHandle {
             self.trackerManager = TrackerManager(info: info, group: group)
         }
 
+        // Serve the metadata to other magnet peers from the exact info bytes
+        let servingExchange = MetadataExchange(infoHash: info.infoHash, metadata: info.rawInfo)
+        self.metadataExchange = servingExchange
+
         await peerManager.configure(
             pieceManager: pm, piecePicker: pp, diskIO: dio,
             pieceCount: info.pieceCount
         )
+        await peerManager.configureMetadataExchange(servingExchange)
     }
 
     /// Complete initialization for .torrent-file init path (must be called after init).
@@ -99,7 +103,7 @@ public actor TorrentHandle {
             // Set up metadata exchange
             let metaEx = MetadataExchange(infoHash: infoHash)
             self.metadataExchange = metaEx
-            await peerManager.configureMagnet(metadataExchange: metaEx)
+            await peerManager.configureMetadataExchange(metaEx)
             let weakSelf = self
             await peerManager.setOnMetadataReceived { info in
                 Task { await weakSelf.onMetadataReceived(info: info) }
@@ -135,7 +139,7 @@ public actor TorrentHandle {
                         await self.peerManager.addPeer(address: address, port: port)
                     }
                 }
-                try? await Task.sleep(for: .seconds(90))
+                try? await Task.sleep(for: .seconds(45))
             }
         }
     }
@@ -159,18 +163,29 @@ public actor TorrentHandle {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(2))
                 guard let self, !Task.isCancelled else { break }
-                let complete = await self.checkCompletion()
+                let complete = await self.refreshProgress()
                 if complete {
                     await self.transitionToSeeding()
                     break
                 }
-                await self.peerManager.checkTimeouts()
-                await self.peerManager.pexTick()
             }
         }
     }
 
-    private func checkCompletion() async -> Bool {
+    /// Samples transfer counters, runs timeout sweeps, and reports completion.
+    private func refreshProgress() async -> Bool {
+        await peerManager.checkTimeouts()
+        await peerManager.pexTick()
+
+        let downloaded = await peerManager.downloadedBytes
+        let uploaded = await peerManager.uploadedBytes
+        downloadRate = Double(downloaded - lastDownloadRateSample) / 2.0
+        uploadRate = Double(uploaded - lastUploadRateSample) / 2.0
+        lastDownloadRateSample = downloaded
+        lastUploadRateSample = uploaded
+        totalDownloaded = downloaded
+        totalUploaded = uploaded
+
         guard let pm = pieceManager else { return false }
         return await pm.isComplete()
     }
@@ -205,8 +220,8 @@ public actor TorrentHandle {
                 guard let self, !Task.isCancelled else { break }
 
                 let left = await self.getRemainingBytes()
-                let infoHash = await self.infoHash
-                let peerID = await self.peerID
+                let infoHash = self.infoHash
+                let peerID = self.peerID
                 let uploaded = await self.totalUploaded
                 let downloaded = await self.totalDownloaded
                 let params = AnnounceParams(
@@ -225,6 +240,21 @@ public actor TorrentHandle {
 
     private func getRemainingBytes() -> Int64 {
         (info?.totalSize ?? 0) - totalDownloaded
+    }
+
+    /// Manually add a peer (trackers, DHT, PEX, or local discovery).
+    public func addPeer(address: String, port: UInt16) async {
+        await peerManager.addPeer(address: address, port: port)
+    }
+
+    /// Admit a peer connection accepted by the session listener.
+    func acceptInbound(channel: Channel, remote: Handshake) async {
+        await peerManager.adoptInbound(channel: channel, remote: remote)
+    }
+
+    /// Apply a new download rate limit (bytes/sec, 0 = unlimited).
+    public func updateRateLimit(_ bytesPerSecond: Int) async {
+        await peerManager.updateRateLimit(bytesPerSecond)
     }
 
     /// Pause the torrent.
@@ -268,10 +298,46 @@ public actor TorrentHandle {
             totalUploaded: totalUploaded,
             totalSize: info?.totalSize ?? 0,
             numPeers: await peerManager.connectionCount,
-            numSeeds: 0,
+            numSeeds: await peerManager.seedCount(),
             piecesCompleted: completed?.popcount ?? 0,
             piecesTotal: info?.pieceCount ?? 0
         )
+    }
+
+    /// Live upload counter (not waiting on the monitor's 2 s sample).
+    public func uploadedTotal() async -> Int64 {
+        await peerManager.uploadedBytes
+    }
+
+    /// Live wire counters (requests sent / bytes received / bytes served).
+    public func wireStats() async -> (sent: Int64, received: Int64, uploaded: Int64) {
+        async let sent = peerManager.requestsSent
+        async let received = peerManager.downloadedBytes
+        async let uploaded = peerManager.uploadedBytes
+        return await (sent, received, uploaded)
+    }
+
+    /// Live diagnostic counters for wire-storm debugging.
+    public func debugCounters() async -> (dups: Int64, verifyFails: Int64, dropped: Int64) {
+        async let dups = peerManager.dupBlocksReceived
+        async let fails = peerManager.pieceVerifyFailures
+        async let dropped = peerManager.blocksDroppedNoBuffer
+        return await (dups, fails, dropped)
+    }
+
+    /// Piece-assembly diagnostics.
+    public func debugAssembly() async -> (calls: Int64, creations: Int64, skipComp: Int64, skipBuf: Int64) {
+        guard let pm = pieceManager else { return (0, 0, 0, 0) }
+        async let calls = pm.startPieceCalls
+        async let creations = pm.startPieceCreations
+        async let skipComp = pm.startPieceSkippedCompleted
+        async let skipBuf = pm.startPieceSkippedBufferExists
+        return await (calls, creations, skipComp, skipBuf)
+    }
+
+    /// Pending-request bookkeeping diagnostics.
+    public func debugPending() async -> (adds: Int64, removes: Int64, clears: Int64) {
+        await peerManager.debugPendingStats()
     }
 
     /// Returns the file entries for this torrent, or nil if metadata is not yet available.
@@ -287,6 +353,13 @@ public actor TorrentHandle {
             uploaded: totalUploaded, downloaded: totalDownloaded,
             savePath: savePath
         )
+    }
+
+    /// Declare every piece complete (files must already exist on disk).
+    func markSeedComplete() async {
+        guard let pm = pieceManager else { return }
+        await pm.markAllComplete()
+        totalDownloaded = info?.totalSize ?? 0
     }
 
     /// Wait until metadata is available, or return immediately if already present.

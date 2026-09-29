@@ -30,7 +30,7 @@
 		<true/>
 	</dict>
 	<key>NSHumanReadableCopyright</key>
-	<string>GNU GPL v3. iDownloader is a fork of Ghost-Downloader-3 (© 2024-2026 XiaoYouChR); modifications © 2026 Subham Subhasis Patra.</string>
+	<string>© 2026 Subham Subhasis Patra. Licensed under the GNU GPL v3.</string>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchScreen</key>

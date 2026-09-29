@@ -110,11 +110,11 @@
   "mediaButtonLabel": {
     "message": "媒体按钮"
   },
-  "downloadWithGhostDownloader": {
-    "message": "用 Ghost Downloader 下载"
+  "downloadWithiDownloader": {
+    "message": "用 iDownloader 下载"
   },
-  "saveAsWithGhostDownloader": {
-    "message": "用 Ghost Downloader 另存为"
+  "saveAsWithiDownloader": {
+    "message": "用 iDownloader 另存为"
   },
   "downloading": {
     "message": "下载中"
@@ -288,10 +288,10 @@
     "message": "更新接管下载失败"
   },
   "extensionDescription": {
-    "message": "管理 Ghost Downloader 任务，将浏览器资源发送到 Ghost Downloader。"
+    "message": "管理 iDownloader 任务，将浏览器资源发送到 iDownloader。"
   },
   "extensionName": {
-    "message": "Ghost Downloader for Browser"
+    "message": "iDownloader for Browser"
   },
   "extensionVersionInfo": {
     "message": "扩展版本 $1",
@@ -462,7 +462,7 @@
     "message": "合并"
   },
   "mergeTaskSentToDesktop": {
-    "message": "在线合并任务已发送到 Ghost Downloader"
+    "message": "在线合并任务已发送到 iDownloader"
   },
   "minInterceptSize": {
     "message": "最小接管大小"
@@ -614,7 +614,7 @@
     "message": "资源已交给浏览器下载"
   },
   "resourceSentToDesktop": {
-    "message": "资源已发送到 Ghost Downloader"
+    "message": "资源已发送到 iDownloader"
   },
   "restoringCapturedResources": {
     "message": "正在恢复已捕获的资源"
@@ -685,11 +685,11 @@
       }
     }
   },
-  "sendCurrentMediaToGhostDownloader": {
-    "message": "发送当前媒体到 Ghost Downloader"
+  "sendCurrentMediaToiDownloader": {
+    "message": "发送当前媒体到 iDownloader"
   },
   "sendToDesktop": {
-    "message": "发送到 Ghost Downloader"
+    "message": "发送到 iDownloader"
   },
   "sending": {
     "message": "正在发送"
@@ -701,7 +701,7 @@
     "message": "已交给浏览器下载"
   },
   "sentToDesktop": {
-    "message": "已发送到 Ghost Downloader"
+    "message": "已发送到 iDownloader"
   },
   "serverUrlSaved": {
     "message": "地址已保存"

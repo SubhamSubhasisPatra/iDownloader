@@ -16,6 +16,9 @@ public actor PeerState {
         public let length: Int
     }
     private var pendingRequests: [BlockRequest: Date] = [:]
+    public private(set) var pendingAdds: Int64 = 0
+    public private(set) var pendingRemoves: Int64 = 0
+    public private(set) var pendingClears: Int64 = 0
     public let maxPipelineDepth: Int
 
     // 5 个在途请求 ≈ 80 KiB，高 RTT 链路的吞吐被窗口卡死；32 个 ≈ 512 KiB 在途，
@@ -33,8 +36,16 @@ public actor PeerState {
         peerChoking
     }
 
+    public func getPeerInterested() -> Bool {
+        peerInterested
+    }
+
     public func getAmInterested() -> Bool {
         amInterested
+    }
+
+    public func getAmChoking() -> Bool {
+        amChoking
     }
 
     public var pendingCount: Int {
@@ -78,19 +89,22 @@ public actor PeerState {
     }
 
     public func addPendingRequest(_ request: BlockRequest) {
+        pendingAdds += 1
         pendingRequests[request] = Date()
     }
 
     public func removePendingRequest(_ request: BlockRequest) {
+        pendingRemoves += 1
         pendingRequests.removeValue(forKey: request)
     }
 
     public func clearPendingRequests() {
+        if !pendingRequests.isEmpty { pendingClears += 1 }
         pendingRequests.removeAll()
     }
 
     /// Returns requests older than the given timeout interval.
-    public func timedOutRequests(timeout: TimeInterval = 30) -> [BlockRequest] {
+    public func timedOutRequests(timeout: TimeInterval = 20) -> [BlockRequest] {
         let cutoff = Date().addingTimeInterval(-timeout)
         return pendingRequests.filter { $0.value < cutoff }.map(\.key)
     }

@@ -246,12 +246,12 @@ async function setupBackground() {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "gd-download",
-    title: chrome.i18n.getMessage("downloadWithGhostDownloader"),
+    title: chrome.i18n.getMessage("downloadWithiDownloader"),
     contexts: ["link", "image", "video", "audio"],
   });
   chrome.contextMenus.create({
     id: "gd-save-as",
-    title: chrome.i18n.getMessage("saveAsWithGhostDownloader"),
+    title: chrome.i18n.getMessage("saveAsWithiDownloader"),
     contexts: ["link", "image", "video", "audio"],
   });
 });

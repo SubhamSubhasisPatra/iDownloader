@@ -137,7 +137,7 @@ class UpdateService:
     # ── Private ──
 
     async def _check(self) -> None:
-        self._emit("app", UpdateState.CHECKING, label=f"Ghost Downloader {VERSION}")
+        self._emit("app", UpdateState.CHECKING, label=f"iDownloader {VERSION}")
 
         data = await self._fetchVersions()
         if data is None:
@@ -150,7 +150,7 @@ class UpdateService:
         latestVersion = appData.get("version", "")
         if latestVersion and isNewer(VERSION, latestVersion):
             self._emit("app", UpdateState.AVAILABLE,
-                        label=f"Ghost Downloader {latestVersion}",
+                        label=f"iDownloader {latestVersion}",
                         latestVersion=latestVersion)
         else:
             self._emit("app", UpdateState.IDLE)

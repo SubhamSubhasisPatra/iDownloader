@@ -200,19 +200,19 @@
     <string name="oobe_back">Назад</string>
     <string name="oobe_basic_subtitle">Выберите папку для сохранения файлов</string>
     <string name="oobe_basic_title">Основные настройки</string>
-    <string name="oobe_complete_subtitle">Ghost Downloader готов к работе.
+    <string name="oobe_complete_subtitle">iDownloader готов к работе.
 Все параметры можно изменить в настройках в любое время.</string>
     <string name="oobe_complete_title">Всё готово</string>
     <string name="oobe_features_subtitle">Включайте по необходимости, позже это можно изменить в настройках</string>
     <string name="oobe_features_title">Популярные функции</string>
     <string name="oobe_finish">Начать работу</string>
     <string name="oobe_next">Далее</string>
-    <string name="oobe_permissions_subtitle">Ghost Downloader нужны следующие разрешения</string>
+    <string name="oobe_permissions_subtitle">iDownloader нужны следующие разрешения</string>
     <string name="oobe_skip">Пропустить всё</string>
     <string name="oobe_start">Начать настройку</string>
     <string name="oobe_welcome_subtitle">Быстрый и умный менеджер загрузок.
 Несколько шагов помогут выполнить базовую настройку.</string>
-    <string name="oobe_welcome_title">Добро пожаловать в Ghost Downloader</string>
+    <string name="oobe_welcome_title">Добро пожаловать в iDownloader</string>
     <string name="pack_bilibili">Bilibili</string>
     <string name="pack_bittorrent">Загрузка BitTorrent</string>
     <string name="pack_ed2k">Загрузка eD2k</string>

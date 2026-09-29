@@ -77,7 +77,7 @@ static void toDirname(pchar *path) {
 static void openLog(const pchar *exeDir) {
 #ifdef _WIN32
     if (exeDir && exeDir[0]) {
-        wsnprintf(g_logPath, PATH_BUF, L"%ls\\GhostDownloader", exeDir);
+        wsnprintf(g_logPath, PATH_BUF, L"%ls\\iDownloader", exeDir);
         if (hasDir(g_logPath)) {
             size_t dirLen = wcslen(g_logPath);
             wsnprintf(g_logPath + dirLen, PATH_BUF - dirLen, L"\\updater.log");
@@ -89,14 +89,14 @@ static void openLog(const pchar *exeDir) {
     wchar_t dir[MAX_PATH];
     if (FAILED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, dir)))
         return;
-    wsnprintf(g_logPath, PATH_BUF, L"%ls\\GhostDownloader", dir);
+    wsnprintf(g_logPath, PATH_BUF, L"%ls\\iDownloader", dir);
     CreateDirectoryW(g_logPath, NULL);
     size_t dirLen = wcslen(g_logPath);
     wsnprintf(g_logPath + dirLen, PATH_BUF - dirLen, L"\\updater.log");
     g_log = _wfopen(g_logPath, L"a");
 #else
     if (exeDir && exeDir[0]) {
-        snprintf(g_logPath, PATH_BUF, "%s/GhostDownloader", exeDir);
+        snprintf(g_logPath, PATH_BUF, "%s/iDownloader", exeDir);
         if (hasDir(g_logPath)) {
             size_t dirLen = strlen(g_logPath);
             snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
@@ -126,7 +126,7 @@ static void openLog(const pchar *exeDir) {
         snprintf(dir, sizeof(dir), "%s", rawPath);
     }
 
-    snprintf(g_logPath, PATH_BUF, "%s/GhostDownloader", dir);
+    snprintf(g_logPath, PATH_BUF, "%s/iDownloader", dir);
     mkdir(g_logPath, 0755);
     size_t dirLen = strlen(g_logPath);
     snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
@@ -150,7 +150,7 @@ static void openLog(const pchar *exeDir) {
     }
 
     mkdir(dir, 0755);
-    snprintf(g_logPath, PATH_BUF, "%s/GhostDownloader", dir);
+    snprintf(g_logPath, PATH_BUF, "%s/iDownloader", dir);
     mkdir(g_logPath, 0755);
     size_t dirLen = strlen(g_logPath);
     snprintf(g_logPath + dirLen, PATH_BUF - dirLen, "/updater.log");
@@ -537,9 +537,9 @@ static int buildNewPortableFolder(pchar *dst, size_t len,
     const wchar_t *rest = exeDir + appLen;
     while (*rest == L'\\' || *rest == L'/') rest++;
     if (*rest)
-        wsnprintf(dst, len, L"%ls\\%ls\\GhostDownloader", newDir, rest);
+        wsnprintf(dst, len, L"%ls\\%ls\\iDownloader", newDir, rest);
     else
-        wsnprintf(dst, len, L"%ls\\GhostDownloader", newDir);
+        wsnprintf(dst, len, L"%ls\\iDownloader", newDir);
 #else
     size_t appLen = strlen(appDir);
     while (appLen > 0 && appDir[appLen - 1] == '/')
@@ -551,9 +551,9 @@ static int buildNewPortableFolder(pchar *dst, size_t len,
     const char *rest = exeDir + appLen;
     while (*rest == '/') rest++;
     if (*rest)
-        snprintf(dst, len, "%s/%s/GhostDownloader", newDir, rest);
+        snprintf(dst, len, "%s/%s/iDownloader", newDir, rest);
     else
-        snprintf(dst, len, "%s/GhostDownloader", newDir);
+        snprintf(dst, len, "%s/iDownloader", newDir);
 #endif
     return 0;
 }
@@ -601,9 +601,9 @@ static int install(const pchar *appDir, const pchar *newDir,
 
     pchar portableSrc[PATH_BUF], portableDst[PATH_BUF];
 #ifdef _WIN32
-    wsnprintf(portableSrc, PATH_BUF, L"%ls\\GhostDownloader", exeDir);
+    wsnprintf(portableSrc, PATH_BUF, L"%ls\\iDownloader", exeDir);
 #else
-    snprintf(portableSrc, sizeof(portableSrc), "%s/GhostDownloader", exeDir);
+    snprintf(portableSrc, sizeof(portableSrc), "%s/iDownloader", exeDir);
 #endif
     if (hasDir(portableSrc)) {
         if (buildNewPortableFolder(portableDst, PATH_BUF, appDir, newDir, exeDir) != 0)
@@ -747,7 +747,7 @@ static int restartElevated(const char *appDir, const char *appExe,
         CFSTR("KeepAlive"),
     };
     CFTypeRef vals[] = {
-        CFSTR("com.ghostdownloader.updater"),
+        CFSTR("com.idownloader.updater"),
         progArgs,
         kCFBooleanTrue,
         kCFBooleanFalse,

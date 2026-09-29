@@ -203,7 +203,7 @@ class TestRequestConstruction:
 
         url = await server(captureHeaders)
         task, step = makeStep(url, tmp_path, fileSize=100, subworkerCount=2,
-                              userAgent="GhostTest/1.0")
+                              userAgent="iDownloaderTest/1.0")
         task.setStatus(TaskStatus.RUNNING)
 
         await runStep(step)
@@ -211,7 +211,7 @@ class TestRequestConstruction:
         assert len(receivedHeaders) >= 2
         for hdrs in receivedHeaders:
             ua = hdrs.get("user-agent", hdrs.get("User-Agent", ""))
-            assert "GhostTest/1.0" in ua, (
+            assert "iDownloaderTest/1.0" in ua, (
                 f"User-Agent missing from request headers: {hdrs}"
             )
 

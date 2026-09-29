@@ -8,6 +8,7 @@ public actor Session {
     private var torrents: [InfoHash: TorrentHandle] = [:]
     private let group: MultiThreadedEventLoopGroup
     private var dhtNode: DHTNode?
+    private var listener: Channel?
     private let alertContinuation: AsyncStream<any Alert>.Continuation
     public let alerts: AsyncStream<any Alert>
 
@@ -78,9 +79,12 @@ public actor Session {
         return statuses
     }
 
-    /// Update session settings.
+    /// Update session settings. The rate limit reaches running torrents too.
     public func updateSettings(_ newSettings: SessionSettings) {
         self.settings = newSettings
+        for handle in torrents.values {
+            Task { await handle.updateRateLimit(newSettings.downloadRateLimit) }
+        }
     }
 
     /// Start DHT if enabled.
@@ -89,6 +93,38 @@ public actor Session {
         let node = DHTNode(port: settings.dhtPort, group: group)
         try await node.start()
         self.dhtNode = node
+    }
+
+    /// Listen for inbound peer connections and route them by info hash
+    /// (port 0 binds an ephemeral port; see `listeningPort`).
+    public func startListener() async throws {
+        guard listener == nil else { return }
+
+        let route: @Sendable (Channel, Handshake) -> Void = { [weak self] channel, handshake in
+            Task { await self?.routeInbound(channel: channel, handshake: handshake) }
+        }
+        let bootstrap = ServerBootstrap(group: group)
+            .serverChannelOption(ChannelOptions.socketOption(.so_reuseaddr), value: 1)
+            .serverChannelOption(ChannelOptions.backlog, value: 256)
+            .childChannelOption(ChannelOptions.socketOption(.tcp_nodelay), value: 1)
+            .childChannelInitializer { channel in
+                channel.pipeline.addHandler(InboundHandshakeRouter(onHandshake: route))
+            }
+        listener = try await nioAwait(
+            bootstrap.bind(host: "0.0.0.0", port: Int(settings.listenPort)))
+    }
+
+    /// The port the listener actually bound (ephemeral binds resolve here).
+    public var listeningPort: UInt16? {
+        listener?.localAddress?.port.map { UInt16($0) }
+    }
+
+    private func routeInbound(channel: Channel, handshake: Handshake) async {
+        guard let handle = torrents[InfoHash(bytes: handshake.infoHash)] else {
+            try? await nioAwait(channel.close())
+            return
+        }
+        await handle.acceptInbound(channel: channel, remote: handshake)
     }
 
     /// Pause all torrents.
@@ -108,6 +144,9 @@ public actor Session {
     /// Shutdown the session.
     public func shutdown() async throws {
         await pauseAll()
+        if let listener {
+            try? await nioAwait(listener.close())
+        }
         alertContinuation.finish()
         try await group.shutdownGracefully()
     }

@@ -1,0 +1,52 @@
+package io.github.subhamsubhasispatra.idownloader.ui.components.task
+
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateListOf
+
+@Stable
+class SelectionState {
+    var isActive by mutableStateOf(false)
+        private set
+
+    private val _selectedIds = mutableStateListOf<String>()
+    val selectedIds: List<String> get() = _selectedIds
+    val count get() = _selectedIds.size
+
+    /** 长按某张卡片进入时带上它，从菜单进入时不带。 */
+    fun start(taskId: String? = null) {
+        isActive = true
+        if (taskId != null) _selectedIds.add(taskId)
+    }
+
+    fun update(taskIds: List<String>) {
+        val hadSelection = _selectedIds.isNotEmpty()
+        _selectedIds.removeAll { it !in taskIds }
+        if (hadSelection && _selectedIds.isEmpty()) clear()
+    }
+
+    fun toggle(taskId: String) {
+        if (taskId in _selectedIds) _selectedIds.remove(taskId)
+        else _selectedIds.add(taskId)
+        if (_selectedIds.isEmpty()) clear()
+    }
+
+    fun selectAll(visibleIds: List<String>) {
+        _selectedIds.clear()
+        _selectedIds.addAll(visibleIds)
+    }
+
+    fun invert(visibleIds: List<String>) {
+        val current = _selectedIds.toSet()
+        _selectedIds.clear()
+        _selectedIds.addAll(visibleIds.filter { it !in current })
+        if (_selectedIds.isEmpty()) clear()
+    }
+
+    fun clear() {
+        isActive = false
+        _selectedIds.clear()
+    }
+}

@@ -1,0 +1,14 @@
+package io.github.subhamsubhasispatra.idownloader.ui.pages.settings
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import io.github.subhamsubhasispatra.idownloader.R
+import io.github.subhamsubhasispatra.idownloader.ui.components.settings.AppearanceSections
+import io.github.subhamsubhasispatra.idownloader.ui.components.settings.SettingsScaffold
+
+@Composable
+fun AppearancePage(onBack: () -> Unit) {
+    SettingsScaffold(stringResource(R.string.settings_section_appearance), onBack) {
+        AppearanceSections()
+    }
+}

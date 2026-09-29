@@ -210,7 +210,7 @@ class SettingPage(ScrollArea):
         if sys.platform != "darwin":
             self.urlSchemeCard = SwitchSettingCard(
                 FluentIcon.LINK, self.tr("允许浏览器扩展唤醒"),
-                self.tr("浏览器扩展可通过 ghostdownloader:// 协议启动桌面端"),
+                self.tr("浏览器扩展可通过 idownloader:// 协议启动桌面端"),
                 cfg.isUrlSchemeRegistered,
             )
             associationCards = [self.urlSchemeCard]
@@ -222,7 +222,7 @@ class SettingPage(ScrollArea):
                     extensions = "/".join(ext for ft in fileTypes for ext in ft.extensions)
                     associationCards.append(SwitchSettingCard(
                         FluentIcon.DOCUMENT, self.tr("关联 {0} 文件").format(extensions),
-                        self.tr("双击 {0} 文件时用 Ghost Downloader 打开").format(extensions),
+                        self.tr("双击 {0} 文件时用 iDownloader 打开").format(extensions),
                         pack.config.associateFileTypes,
                     ))
                 schemes = pack.uriSchemes()
@@ -230,7 +230,7 @@ class SettingPage(ScrollArea):
                     schemeText = "/".join(s.displayName for s in schemes)
                     associationCards.append(SwitchSettingCard(
                         FluentIcon.LINK, self.tr("处理 {0} 链接").format(schemeText),
-                        self.tr("点击 {0} 链接时唤起 Ghost Downloader").format(schemeText),
+                        self.tr("点击 {0} 链接时唤起 iDownloader").format(schemeText),
                         pack.config.associateUriSchemes,
                     ))
             self.associationGroup.addSettingCards(associationCards)
@@ -314,7 +314,7 @@ class SettingPage(ScrollArea):
 
         self.autoRunCard = SwitchSettingCard(
             FluentIcon.VPN, self.tr("开机启动"),
-            self.tr("在系统启动时静默运行 Ghost Downloader"),
+            self.tr("在系统启动时静默运行 iDownloader"),
             cfg.shouldRunAtLogin,
         )
         from app.config.paths import APP_DATA_DIR, isPortable
@@ -358,7 +358,7 @@ class SettingPage(ScrollArea):
         self.feedbackCard = PrimaryPushSettingCard(
             self.tr("提供反馈"), FluentIcon.FEEDBACK,
             self.tr("提供反馈"),
-            self.tr("通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题"),
+            self.tr("通过提供反馈来帮助我们改进 iDownloader，也可查看日志排查问题"),
         )
         self.openLogButton = PushButton(self.tr("查看日志"), self.feedbackCard)
         self.feedbackCard.hBoxLayout.insertSpacing(6, 8)
@@ -558,7 +558,7 @@ class SettingPage(ScrollArea):
     def _onOpenLogClicked(self) -> None:
         from app.config.paths import APP_DATA_DIR
         from app.platform.desktop import revealInFolder
-        revealInFolder(f"{APP_DATA_DIR}/GhostDownloader.log")
+        revealInFolder(f"{APP_DATA_DIR}/iDownloader.log")
 
     @property
     def searchPlaceholder(self) -> str:

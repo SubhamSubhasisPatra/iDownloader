@@ -26,7 +26,25 @@ public actor PeerManager {
     private var pexUnsent: [(String, UInt16)] = []
     private var pexLastSentAt: Date?
 
+    /// Peer's advertised ut_metadata message id (BEP-9) — data messages arrive under it.
+    private var metaPeerIDs: [String: UInt8] = [:]
+
     private var pieceCount: Int = 0
+
+    /// Bytes received in piece messages (session total).
+    public private(set) var downloadedBytes: Int64 = 0
+    /// Bytes served in response to peer requests (session total).
+    public private(set) var uploadedBytes: Int64 = 0
+    /// Request messages sent (diagnostics for wire-storm bugs).
+    public private(set) var requestsSent: Int64 = 0
+    public private(set) var dupBlocksReceived: Int64 = 0
+    public private(set) var pieceVerifyFailures: Int64 = 0
+    public private(set) var blocksDroppedNoBuffer: Int64 = 0
+
+    /// Download throttle in bytes/sec, 0 = unlimited.
+    private var rateLimit: Int = 0
+    private var windowStart = Date()
+    private var windowBytes: Int64 = 0
 
     public init(infoHash: Data, peerID: Data, group: EventLoopGroup, maxConnections: Int = 50) {
         self.infoHash = infoHash
@@ -42,25 +60,67 @@ public actor PeerManager {
         self.pieceCount = pieceCount
     }
 
-    public func configureMagnet(metadataExchange: MetadataExchange) {
-        self.metadataExchange = metadataExchange
+    public func configureMetadataExchange(_ exchange: MetadataExchange) {
+        self.metadataExchange = exchange
     }
 
     public func setOnMetadataReceived(_ handler: @escaping (TorrentInfo) -> Void) {
         self.onMetadataReceived = handler
     }
 
-    /// Add a peer and attempt connection.
+    public func updateRateLimit(_ bytesPerSecond: Int) {
+        rateLimit = bytesPerSecond
+    }
+
+    /// Admit a connection accepted by the session listener.
+    public func adoptInbound(channel: Channel, remote: Handshake) async {
+        let key = channel.remoteAddress.map { "\($0)" } ?? UUID().uuidString
+        let conn = PeerConnection(
+            adopted: channel, infoHash: infoHash, peerID: peerID,
+            remoteID: remote.peerID,
+            remoteSupportsExtensions: remote.reserved.count > 5 && remote.reserved[5] & 0x10 != 0)
+        guard registerPeer(key: key, conn: conn) else {
+            try? await nioAwait(channel.close())
+            return
+        }
+        do {
+            try await conn.attachPipeline()
+            try await conn.acceptInbound()
+        } catch {
+            removePeerByKey(key)
+            try? await nioAwait(channel.close())
+            return
+        }
+        try? await nioAwait(channel.setOption(ChannelOptions.autoRead, value: true))
+        await onPeerConnected(key: key, conn: conn)
+    }
+
+    /// Add a peer and attempt connection. The PeerState is registered before the
+    /// connect Task runs — peers send their bitfield/unchoke immediately after
+    /// the handshake, and messages beating registration used to be dropped forever.
     public func addPeer(address: String, port: UInt16) async {
         let key = "\(address):\(port)"
-        guard connections[key] == nil else { return }
-        guard connections.count < maxConnections else { return }
-
         let conn = PeerConnection(address: address, port: port, infoHash: infoHash, peerID: peerID)
-        connections[key] = conn
-        peerInfos[key] = PeerInfo(id: Data(), address: address, port: port)
+        guard registerPeer(key: key, conn: conn) else { return }
 
-        // Set up message callbacks
+        Task {
+            do {
+                _ = try await conn.connect(on: group)
+                await self.onPeerConnected(key: key, conn: conn)
+            } catch {
+                await self.removePeerByKey(key)
+            }
+        }
+    }
+
+    /// Shared registration for outbound and inbound peers. Messages may arrive
+    /// the instant the channel is live, so this must be synchronous.
+    private func registerPeer(key: String, conn: PeerConnection) -> Bool {
+        guard connections[key] == nil, connections.count < maxConnections else { return false }
+        connections[key] = conn
+        peerInfos[key] = PeerInfo(id: Data(), address: conn.address, port: conn.port)
+        peerStates[key] = PeerState(pieceCount: pieceCount > 0 ? pieceCount : 1)
+
         conn.onMessage = { [weak self] message in
             guard let self else { return }
             Task { await self.handleMessage(message, from: key) }
@@ -69,29 +129,19 @@ public actor PeerManager {
             guard let self else { return }
             Task { await self.handleDisconnect(key: key) }
         }
-
-        Task {
-            do {
-                let _ = try await conn.connect(on: group)
-                await self.onPeerConnected(key: key, conn: conn)
-            } catch {
-                await self.removePeerByKey(key)
-            }
-        }
+        return true
     }
 
     private func onPeerConnected(key: String, conn: PeerConnection) async {
+        guard peerStates[key] != nil else { return }
         connectedPeers.insert(key)
 
-        let pc = pieceCount > 0 ? pieceCount : 1
-        let state = PeerState(pieceCount: pc)
-        await state.setAmInterested(true)
-        if conn.supportsExtensions {
-            await state.setAmInterested(true)
-        }
-        peerStates[key] = state
+        // Outbound: the remote handshake may still be in flight; without it we
+        // can't know whether extension negotiation is possible.
+        await conn.waitForHandshake(timeout: 10)
 
-        // Send interested
+        let state = peerStates[key]!
+        await state.setAmInterested(true)
         try? await conn.send(.interested)
 
         // Extended handshake carries ut_metadata (magnet path) and ut_pex (always)
@@ -99,37 +149,28 @@ public actor PeerManager {
             let extHandshake = await buildExtendedHandshake()
             try? await conn.send(.extended(id: 0, payload: extHandshake))
         }
-    }
 
-    /// Combines MetadataExchange's handshake dict with our ut_pex advertisement.
-    private func buildExtendedHandshake() async -> Data {
-        var root: [(key: Data, value: BencodeValue)] = []
-        if let metaEx = metadataExchange {
-            let raw = await metaEx.buildExtendedHandshake()
-            if let decoded = try? BencodeDecoder().decode(raw),
-               case .dictionary(let pairs) = decoded {
-                root = pairs
+        // Advertise what we already have so peers can request from us
+        if let pm = pieceManager {
+            let completed = await pm.getCompleted()
+            if completed.popcount > 0 {
+                try? await conn.send(.bitfield(completed.toData()))
             }
         }
 
-        let utPex: (key: Data, value: BencodeValue) = (
-            Data("ut_pex".utf8), .integer(Int64(pexLocalID))
-        )
-        if let mIndex = root.firstIndex(where: { $0.key == Data("m".utf8) }) {
-            if case .dictionary(var m) = root[mIndex].value {
-                m.removeAll { $0.key == utPex.key }
-                m.append(utPex)
-                root[mIndex].value = .dictionary(m)
-            }
-        } else {
-            root.append((Data("m".utf8), .dictionary([utPex])))
-        }
-        return BencodeEncoder().encode(.dictionary(root))
+        // The peer's bitfield/unchoke may have arrived while the handshake was settling
+        await fillRequests(for: key)
     }
 
     private func handleDisconnect(key: String) {
         if let state = peerStates[key] {
             Task {
+                // Free the blocks this peer owed so other peers request them —
+                // the request generation must not bury them or the torrent stalls.
+                let pending = await state.getPendingRequests()
+                for request in pending.keys {
+                    await self.pieceManager?.clearRequested(pieceIndex: request.pieceIndex, offset: request.offset)
+                }
                 let bf = await state.getPeerBitfield()
                 if var picker = self.piecePicker {
                     picker.removePeerBitfield(bf)
@@ -144,7 +185,7 @@ public actor PeerManager {
     }
 
     private func handleMessage(_ message: PeerMessage, from key: String) async {
-        guard let state = peerStates[key] else { return }
+        guard let state = peerStates[key], let conn = connections[key] else { return }
 
         switch message {
         case .bitfield(let data):
@@ -176,9 +217,23 @@ public actor PeerManager {
 
         case .interested:
             await state.setPeerInterested(true)
+            // Leech-friendly policy: unchoke anyone interested so the swarm moves fast
+            if await state.getAmChoking() {
+                await state.setAmChoking(false)
+                try? await conn.send(.unchoke)
+            }
 
         case .notInterested:
             await state.setPeerInterested(false)
+            if !(await state.getAmChoking()) {
+                await state.setAmChoking(true)
+                try? await conn.send(.choke)
+            }
+
+        case .request(let index, let begin, let length):
+            if index == 7 && begin == 114688 {
+            }
+            await serveUpload(index: Int(index), begin: Int(begin), length: Int(length), key: key)
 
         case .piece(let index, let begin, let block):
             let pieceIndex = Int(index)
@@ -187,15 +242,19 @@ public actor PeerManager {
             await state.removePendingRequest(request)
 
             guard let pm = pieceManager else { break }
-            await pm.addBlock(pieceIndex: pieceIndex, offset: offset, data: block)
-
-            // Check if all blocks received for this piece
-            let expectedSize = await pm.expectedPieceSize(pieceIndex)
-            let buffer = await pm.getPieceBuffer(pieceIndex)
-            if let buf = buffer, buf.count >= expectedSize {
-                await onPieceComplete(index: pieceIndex, data: buf)
+            downloadedBytes += Int64(block.count)
+            windowBytes += Int64(block.count)
+            let dup = await pm.isBlockReceived(pieceIndex: pieceIndex, offset: offset)
+            if dup { dupBlocksReceived += 1 }
+            let pieceDone = await pm.addBlock(pieceIndex: pieceIndex, offset: offset, data: block)
+            if pieceIndex == 7 && offset == 114688 {
+                let hp = await pm.hasPiece(pieceIndex)
+                let hb = await pm.hasBuffer(pieceIndex)
             }
-
+            if !dup, !(await pm.hasBuffer(pieceIndex)) { blocksDroppedNoBuffer += 1 }
+            if pieceDone {
+                await onPieceComplete(index: pieceIndex)
+            }
             await fillRequests(for: key)
 
         case .extended(let extID, let payload):
@@ -206,27 +265,86 @@ public actor PeerManager {
         }
     }
 
+    /// Serve a block request from a peer we unchoked (seeding path).
+    private func serveUpload(index: Int, begin: Int, length: Int, key: String) async {
+        guard length > 0, length <= 1_048_576,
+              let pm = pieceManager, let dio = diskIO,
+              let state = peerStates[key], let conn = connections[key] else { return }
+        guard await pm.hasPiece(index),
+              await state.getPeerInterested(),
+              !(await state.getAmChoking()) else { return }
+        let pieceSize = await pm.expectedPieceSize(index)
+        guard begin >= 0, begin + length <= pieceSize else { return }
+        guard let piece = try? await dio.readPieceCached(index: index),
+              begin + length <= piece.count else { return }
+
+        uploadedBytes += Int64(length)
+        if index == 7 && begin == 114688 {
+        }
+        try? await conn.send(.piece(
+            index: UInt32(index), begin: UInt32(begin),
+            block: piece.subdata(in: begin..<(begin + length))))
+    }
+
+    private func onPieceComplete(index pieceIndex: Int) async {
+        guard let pm = pieceManager else { return }
+        let outcome = await pm.completePiece(pieceIndex)
+        if pieceIndex == 7 {
+            let hp = await pm.hasPiece(pieceIndex)
+        }
+        switch outcome {
+        case .verified(let data):
+            if let dio = diskIO {
+                try? await dio.writePiece(index: pieceIndex, data: data)
+            }
+            await broadcastHave(pieceIndex: UInt32(pieceIndex))
+            onPieceCompleted?(pieceIndex)
+        case .corrupt:
+            // Corrupt piece: cancel its outstanding requests everywhere and let
+            // the picker re-request it from scratch
+            pieceVerifyFailures += 1
+            await cancelPieceRequests(pieceIndex: pieceIndex)
+        case .notAssembling:
+            break  // duplicate completion raced the real one — nothing to do
+        }
+    }
+
+    private func cancelPieceRequests(pieceIndex: Int) async {
+        for (key, state) in peerStates {
+            let pending = await state.getPendingRequests()
+            for request in pending.keys where request.pieceIndex == pieceIndex {
+                await state.removePendingRequest(request)
+                try? await connections[key]?.send(.cancel(
+                    index: UInt32(pieceIndex),
+                    begin: UInt32(request.offset),
+                    length: UInt32(request.length)))
+            }
+            await fillRequests(for: key)
+        }
+    }
+
     private func handleExtendedMessage(extID: UInt8, payload: Data, from key: String) async {
         if extID == 0 {
-            // Record which message id this peer uses for ut_pex
-            if let decoded = try? BencodeDecoder().decode(payload),
-               let pexID = decoded["m"]?["ut_pex"]?.integerValue,
-               pexID > 0, pexID <= Int(UInt8.max) {
-                pexPeerIDs[key] = UInt8(pexID)
-            }
-        } else if extID == pexPeerIDs[key], let decoded = try? BencodeDecoder().decode(payload),
-                  let added = decoded["added"]?.stringValue {
-            // BEP-11: "added" is a compact IPv4 peer list; dropped is ignored
-            for (address, port) in Self.parseCompactPeers(added) {
-                if pexUnsent.count < 200 {
-                    pexUnsent.append((address, port))
-                }
-                await addPeer(address: address, port: port)
-            }
+            recordRemoteExtensionIDs(payload: payload, key: key)
+        } else if extID == pexPeerIDs[key] {
+            await handleIncomingPEX(payload: payload)
         }
 
         guard let metaEx = metadataExchange else { return }
-        let result = await metaEx.handleExtendedMessage(id: extID, payload: payload)
+        let result: MetadataExchange.Result
+        if extID == 0 {
+            result = await metaEx.handleExtendedHandshake(payload: payload)
+        } else if extID != pexPeerIDs[key] {
+            // ut_metadata traffic: data arrives under the peer's advertised id,
+            // requests under ours — the payload's msg_type distinguishes them.
+            result = await metaEx.handleMetadataPayload(payload: payload)
+        } else {
+            return
+        }
+        await deliver(result, to: key)
+    }
+
+    private func deliver(_ result: MetadataExchange.Result, to key: String) async {
         switch result {
         case .sendMessage(let msg):
             try? await connections[key]?.send(msg)
@@ -238,6 +356,28 @@ public actor PeerManager {
             onMetadataReceived?(info)
         case .none:
             break
+        }
+    }
+
+    private func recordRemoteExtensionIDs(payload: Data, key: String) {
+        guard let decoded = try? BencodeDecoder().decode(payload) else { return }
+        if let pexID = decoded["m"]?["ut_pex"]?.integerValue, pexID > 0, pexID <= Int(UInt8.max) {
+            pexPeerIDs[key] = UInt8(pexID)
+        }
+        if let metaID = decoded["m"]?["ut_metadata"]?.integerValue, metaID > 0, metaID <= Int(UInt8.max) {
+            metaPeerIDs[key] = UInt8(metaID)
+        }
+    }
+
+    private func handleIncomingPEX(payload: Data) async {
+        guard let decoded = try? BencodeDecoder().decode(payload),
+              let added = decoded["added"]?.stringValue else { return }
+        // BEP-11: "added" is a compact IPv4 peer list; dropped is ignored
+        for (address, port) in Self.parseCompactPeers(added) {
+            if pexUnsent.count < 200 {
+                pexUnsent.append((address, port))
+            }
+            await addPeer(address: address, port: port)
         }
     }
 
@@ -284,72 +424,84 @@ public actor PeerManager {
         }
     }
 
+    /// Fill this peer's request pipeline. Keeps picking pieces until the pipeline
+    /// is full — the old one-piece-per-fill loop left half of it idle.
     private func fillRequests(for key: String) async {
         guard let state = peerStates[key],
               let pm = pieceManager,
+              let picker = piecePicker,
               let conn = connections[key] else { return }
-
-        let peerChoking = await state.getPeerChoking()
-        guard !peerChoking else { return }
+        guard !(await state.getPeerChoking()) else { return }
+        guard downloadAllowed() else { return }
 
         let completed = await pm.getCompleted()
+        let peerBF = await state.getPeerBitfield()
+        let candidates = picker.pickMultiple(have: completed, peerHas: peerBF, count: 8)
 
-        while await state.canRequest {
-            let peerBF = await state.getPeerBitfield()
-            guard let picker = piecePicker,
-                  let pieceIndex = picker.pick(have: completed, peerHas: peerBF) else { break }
-
-            // Start piece if not in progress
+        for pieceIndex in candidates {
+            guard await state.canRequest else { break }
             let inProg = await pm.isInProgress(pieceIndex)
-            let hasPc = await pm.hasPiece(pieceIndex)
-            if !inProg && !hasPc {
+            let hasPiece = await pm.hasPiece(pieceIndex)
+            if !inProg && !hasPiece {
                 await pm.startPiece(pieceIndex)
             }
-
-            let pieceSize = await pm.expectedPieceSize(pieceIndex)
-            let blockSize = 16384
-            var offset = 0
-            while offset < pieceSize {
-                let canReq = await state.canRequest
-                guard canReq else { break }
-                let length = min(blockSize, pieceSize - offset)
-                let request = PeerState.BlockRequest(pieceIndex: pieceIndex, offset: offset, length: length)
-                if !(await state.hasPending(request)) {
-                    await state.addPendingRequest(request)
-                    try? await conn.send(.request(
-                        index: UInt32(pieceIndex),
-                        begin: UInt32(offset),
-                        length: UInt32(length)
-                    ))
-                }
-                offset += blockSize
+            for block in await pm.missingBlocks(pieceIndex) {
+                guard await state.canRequest else { break }
+                let request = PeerState.BlockRequest(pieceIndex: pieceIndex, offset: block.offset, length: block.length)
+                guard !(await state.hasPending(request)) else { continue }
+                await state.addPendingRequest(request)
+                await pm.markRequested(pieceIndex: pieceIndex, offset: block.offset)
+                requestsSent += 1
+                try? await conn.send(.request(
+                    index: UInt32(pieceIndex),
+                    begin: UInt32(block.offset),
+                    length: UInt32(block.length)))
             }
-            break // One piece at a time per fill cycle
+        }
+
+        // Endgame: nothing left to pick or request but the torrent isn't
+        // complete — request the last unreceived blocks from every peer that
+        // has their piece, regardless of the request generation. addBlock
+        // deduplicates what arrives twice.
+        if candidates.isEmpty, !(await pm.isComplete()), await pm.allBlocksRequested() {
+            await fillEndgame(state: state, conn: conn, pm: pm, completed: completed, peerBF: peerBF)
         }
     }
 
-    private func onPieceComplete(index pieceIndex: Int, data: Data) async {
-        guard let pm = pieceManager else { return }
-        let verified = await pm.completePiece(pieceIndex)
-        if verified {
-            // Write to disk
-            if let dio = diskIO {
-                try? await dio.writePiece(index: pieceIndex, data: data)
+    private func fillEndgame(state: PeerState, conn: PeerConnection, pm: PieceManager,
+                             completed: Bitfield, peerBF: Bitfield) async {
+        if let last = endgameLastFired, Date().timeIntervalSince(last) < 0.25 { return }
+        endgameLastFired = Date()
+
+        for pieceIndex in await pm.inProgressPieces() {
+            guard peerBF.get(pieceIndex), !completed.get(pieceIndex),
+                  !(await pm.hasPiece(pieceIndex)) else { continue }
+            for block in await pm.unreceivedBlocks(pieceIndex) {
+                guard await state.pendingCount < 64 else { return }
+                let request = PeerState.BlockRequest(pieceIndex: pieceIndex, offset: block.offset, length: block.length)
+                guard !(await state.hasPending(request)) else { continue }
+                await state.addPendingRequest(request)
+                requestsSent += 1
+                try? await conn.send(.request(
+                    index: UInt32(pieceIndex),
+                    begin: UInt32(block.offset),
+                    length: UInt32(block.length)))
             }
-            await broadcastHave(pieceIndex: UInt32(pieceIndex))
-            onPieceCompleted?(pieceIndex)
         }
     }
 
-    private func markConnected(key: String) {
-        connectedPeers.insert(key)
-    }
+    /// Endgame re-fires at most every 250 ms per peer — without this the
+    /// arrival-driven fill loop re-duplicates the last blocks at wire speed.
+    private var endgameLastFired: Date?
 
-    private func removePeerByKey(_ key: String) {
-        connections.removeValue(forKey: key)
-        peerInfos.removeValue(forKey: key)
-        peerStates.removeValue(forKey: key)
-        connectedPeers.remove(key)
+    /// Sliding 1 s window check against the configured download rate limit.
+    private func downloadAllowed() -> Bool {
+        guard rateLimit > 0 else { return true }
+        if Date().timeIntervalSince(windowStart) >= 1 {
+            windowStart = Date()
+            windowBytes = 0
+        }
+        return windowBytes < Int64(rateLimit)
     }
 
     /// Remove a peer.
@@ -378,32 +530,27 @@ public actor PeerManager {
         connectedPeers.count
     }
 
-    /// Implements the choking algorithm — unchoke top uploaders + one optimistic unchoke.
-    public func runChokingAlgorithm() async {
-        var peers = Array(peerInfos)
-        peers.sort { $0.value.downloadRate > $1.value.downloadRate }
-
-        let unchokeSlots = 4
-        for (i, peer) in peers.enumerated() {
-            var info = peer.value
-            if i < unchokeSlots {
-                info.amChoking = false
-            } else if i == unchokeSlots {
-                info.amChoking = false
-            } else {
-                info.amChoking = true
-            }
-            peerInfos[peer.key] = info
+    /// Aggregate wire diagnostics.
+    public func debugPendingStats() async -> (adds: Int64, removes: Int64, clears: Int64) {
+        var adds: Int64 = 0, removes: Int64 = 0, clears: Int64 = 0
+        for state in peerStates.values {
+            adds += await state.pendingAdds
+            removes += await state.pendingRemoves
+            clears += await state.pendingClears
         }
+        return (adds, removes, clears)
     }
 
-    /// Send interested message to all peers.
-    public func sendInterestedToAll() async {
-        let msg = PeerMessage.interested
-        for (key, conn) in connections {
-            guard connectedPeers.contains(key) else { continue }
-            try? await conn.send(msg)
+    /// Connected peers that have every piece.
+    public func seedCount() async -> Int {
+        guard pieceCount > 0 else { return 0 }
+        var seeds = 0
+        for state in peerStates.values {
+            if await state.getPeerBitfield().popcount == pieceCount {
+                seeds += 1
+            }
         }
+        return seeds
     }
 
     /// Broadcast a have message to all peers.
@@ -421,10 +568,44 @@ public actor PeerManager {
             let timedOut = await state.timedOutRequests()
             for request in timedOut {
                 await state.removePendingRequest(request)
+                await pieceManager?.clearRequested(pieceIndex: request.pieceIndex, offset: request.offset)
             }
             if !timedOut.isEmpty {
                 await fillRequests(for: key)
             }
         }
+    }
+
+    /// Combines MetadataExchange's handshake dict with our ut_pex advertisement.
+    private func buildExtendedHandshake() async -> Data {
+        var root: [(key: Data, value: BencodeValue)] = []
+        if let metaEx = metadataExchange {
+            let raw = await metaEx.buildExtendedHandshake()
+            if let decoded = try? BencodeDecoder().decode(raw),
+               case .dictionary(let pairs) = decoded {
+                root = pairs
+            }
+        }
+
+        let utPex: (key: Data, value: BencodeValue) = (
+            Data("ut_pex".utf8), .integer(Int64(pexLocalID))
+        )
+        if let mIndex = root.firstIndex(where: { $0.key == Data("m".utf8) }) {
+            if case .dictionary(var m) = root[mIndex].value {
+                m.removeAll { $0.key == utPex.key }
+                m.append(utPex)
+                root[mIndex].value = .dictionary(m)
+            }
+        } else {
+            root.append((Data("m".utf8), .dictionary([utPex])))
+        }
+        return BencodeEncoder().encode(.dictionary(root))
+    }
+
+    private func removePeerByKey(_ key: String) {
+        connections.removeValue(forKey: key)
+        peerInfos.removeValue(forKey: key)
+        peerStates.removeValue(forKey: key)
+        connectedPeers.remove(key)
     }
 }

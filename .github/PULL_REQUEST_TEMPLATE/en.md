@@ -1,6 +1,6 @@
 <!-- 🚨 Please do not skip or remove the information below. It is needed for evaluation and testing, and completing it helps your PR get reviewed faster. 🚨 -->
 <!-- 👉 A PR should ideally address only one issue unless the issues are closely related. -->
-<!-- 📝 Please keep `☑️ Allow edits by maintainers` enabled on your PR. Ghost Downloader uses a fairly strict project template, and maintainers may help fix small mistakes or formatting issues. -->
+<!-- 📝 Please keep `☑️ Allow edits by maintainers` enabled on your PR. iDownloader uses a fairly strict project template, and maintainers may help fix small mistakes or formatting issues. -->
 
 ## PR Description
 <!-- Add a short description of the bug you fixed or the feature you added -->

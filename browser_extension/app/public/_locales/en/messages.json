@@ -94,11 +94,11 @@
   "mediaButtonLabel": {
     "message": "Media button"
   },
-  "downloadWithGhostDownloader": {
-    "message": "Download with Ghost Downloader"
+  "downloadWithiDownloader": {
+    "message": "Download with iDownloader"
   },
-  "saveAsWithGhostDownloader": {
-    "message": "Save As with Ghost Downloader"
+  "saveAsWithiDownloader": {
+    "message": "Save As with iDownloader"
   },
   "downloading": {
     "message": "Downloading"
@@ -260,10 +260,10 @@
     "message": "Failed to update take-over downloads"
   },
   "extensionDescription": {
-    "message": "Manage Ghost Downloader tasks and send browser resources to Ghost Downloader."
+    "message": "Manage iDownloader tasks and send browser resources to iDownloader."
   },
   "extensionName": {
-    "message": "Ghost Downloader for Browser"
+    "message": "iDownloader for Browser"
   },
   "extensionVersionInfo": {
     "message": "Extension version $1"
@@ -394,7 +394,7 @@
     "message": "Merge"
   },
   "mergeTaskSentToDesktop": {
-    "message": "Online merge task sent to Ghost Downloader"
+    "message": "Online merge task sent to iDownloader"
   },
   "minInterceptSize": {
     "message": "Minimum Intercept Size"
@@ -536,7 +536,7 @@
     "message": "Resource sent to browser for downloading"
   },
   "resourceSentToDesktop": {
-    "message": "Resource sent to Ghost Downloader"
+    "message": "Resource sent to iDownloader"
   },
   "restoringCapturedResources": {
     "message": "Restoring captured resources"
@@ -589,11 +589,11 @@
   "sendCount_popup_pages_ImagesPage_tsx": {
     "message": "Send ($1)"
   },
-  "sendCurrentMediaToGhostDownloader": {
-    "message": "Send current media to Ghost Downloader"
+  "sendCurrentMediaToiDownloader": {
+    "message": "Send current media to iDownloader"
   },
   "sendToDesktop": {
-    "message": "Send to Ghost Downloader"
+    "message": "Send to iDownloader"
   },
   "sending": {
     "message": "Sending"
@@ -605,7 +605,7 @@
     "message": "Sent to browser download"
   },
   "sentToDesktop": {
-    "message": "Sent to Ghost Downloader"
+    "message": "Sent to iDownloader"
   },
   "serverUrlSaved": {
     "message": "Address saved"

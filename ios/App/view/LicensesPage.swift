@@ -4,7 +4,7 @@ struct LicensesPage: View {
     var body: some View {
         List {
             Section {
-                Text("iDownloader is free software: you can use, study, share and improve it under the GNU General Public License v3. It is a fork of Ghost-Downloader-3 by XiaoYouChR; this fork is not endorsed by the original authors.")
+                Text("iDownloader is free software: you can use, study, share and improve it under the GNU General Public License v3. Copyright and third-party notices are included with this app.")
                 LabeledContent("License", value: "GNU GPL v3")
                 NavigationLink("License Text") {
                     NoticeTextPage(resource: "LICENSE", title: "GNU GPL v3")

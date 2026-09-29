@@ -178,8 +178,8 @@
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="676" />
-            <source>双击 .torrent 等文件时用 Ghost Downloader 打开</source>
-            <translation>Автоматически открывать .torrent и другие файлы в Ghost Downloader при двойном щелчке</translation>
+            <source>双击 .torrent 等文件时用 iDownloader 打开</source>
+            <translation>Автоматически открывать .torrent и другие файлы в iDownloader при двойном щелчке</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="680" />
@@ -188,8 +188,8 @@
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="681" />
-            <source>点击 Magnet/eD2k/FTP 链接时唤起 Ghost Downloader</source>
-            <translation>Запускать Ghost Downloader при клике на Magnet/eD2k/FTP ссылки</translation>
+            <source>点击 Magnet/eD2k/FTP 链接时唤起 iDownloader</source>
+            <translation>Запускать iDownloader при клике на Magnet/eD2k/FTP ссылки</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="685" />
@@ -198,20 +198,20 @@
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="686" />
-            <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
-            <translation>Расширение браузера может запускать клиент через протокол ghostdownloader://</translation>
+            <source>浏览器扩展可通过 idownloader:// 协议启动桌面端</source>
+            <translation>Расширение браузера может запускать клиент через протокол idownloader://</translation>
         </message>
         <message>
-            <source>双击 .torrent 等文件时自动用 Ghost Downloader 打开</source>
-            <translation type="vanished">Автоматически открывать .torrent и другие файлы в Ghost Downloader при двойном щелчке</translation>
+            <source>双击 .torrent 等文件时自动用 iDownloader 打开</source>
+            <translation type="vanished">Автоматически открывать .torrent и другие файлы в iDownloader при двойном щелчке</translation>
         </message>
         <message>
             <source>注册 URL 协议</source>
             <translation type="vanished">Зарегистрировать URL-протокол</translation>
         </message>
         <message>
-            <source>允许网页通过 ghostdownloader:// 链接唤起本应用</source>
-            <translation type="vanished">Разрешать веб-страницам запускать приложение по ссылкам ghostdownloader://</translation>
+            <source>允许网页通过 idownloader:// 链接唤起本应用</source>
+            <translation type="vanished">Разрешать веб-страницам запускать приложение по ссылкам idownloader://</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="694" />
@@ -220,8 +220,8 @@
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="695" />
-            <source>让支持 Aria2 的工具和网站把下载任务发给 Ghost Downloader</source>
-            <translation>Позволяет инструментам и сайтам с поддержкой Aria2 отправлять задачи в Ghost Downloader</translation>
+            <source>让支持 Aria2 的工具和网站把下载任务发给 iDownloader</source>
+            <translation>Позволяет инструментам и сайтам с поддержкой Aria2 отправлять задачи в iDownloader</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="659" />
@@ -797,8 +797,8 @@ http://example.com/{mp4,mkv}/video</translation>
             <translation type="vanished">Ассоциировать .torrent-файлы</translation>
         </message>
         <message>
-            <source>把 .torrent 文件的打开方式设为 Ghost Downloader</source>
-            <translation type="vanished">Установить Ghost Downloader программой по умолчанию для открытия .torrent-файлов</translation>
+            <source>把 .torrent 文件的打开方式设为 iDownloader</source>
+            <translation type="vanished">Установить iDownloader программой по умолчанию для открытия .torrent-файлов</translation>
         </message>
         <message>
             <source>下载完成后继续做种;0 表示不按分享率自动暂停,100% 表示分享率 1.0</source>
@@ -912,8 +912,8 @@ http://example.com/{mp4,mkv}/video</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="408" />
-            <source>让浏览器中的下载自动接管到 Ghost Downloader</source>
-            <translation>Автоматически перехватывать загрузки из браузера в Ghost Downloader</translation>
+            <source>让浏览器中的下载自动接管到 iDownloader</source>
+            <translation>Автоматически перехватывать загрузки из браузера в iDownloader</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="420" />
@@ -1071,14 +1071,14 @@ http://example.com/{mp4,mkv}/video</translation>
             <translation type="vanished">Расширение браузера</translation>
         </message>
         <message>
-            <source>浏览器扩展正在请求连接到 Ghost Downloader。
+            <source>浏览器扩展正在请求连接到 iDownloader。
 
 来源: {0}
 客户端: {1}
 扩展版本: {2}
 
 仅在你刚刚点击扩展里的“自动配对”时允许。</source>
-            <translation type="obsolete">浏览器扩展正在请求连接到 Ghost Downloader。
+            <translation type="obsolete">浏览器扩展正在请求连接到 iDownloader。
 
 来源: {0}
 客户端: {1}
@@ -1406,9 +1406,9 @@ http://example.com/{mp4,mkv}/video</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="761" />
-            <source>Ghost Downloader 已准备好为你工作。
+            <source>iDownloader 已准备好为你工作。
 你可以随时在设置中调整所有选项。</source>
-            <translation>Ghost Downloader готов к работе.
+            <translation>iDownloader готов к работе.
 Вы можете настроить все параметры в любое время в настройках.</translation>
         </message>
         <message>
@@ -2459,8 +2459,8 @@ http://example.com/{mp4,mkv}/video</translation>
             <translation type="vanished">Ассоциировать файлы M3U8/MPD</translation>
         </message>
         <message>
-            <source>把 .m3u8/.m3u/.mpd 文件的打开方式设为 Ghost Downloader</source>
-            <translation type="vanished">Установить Ghost Downloader программой по умолчанию для .m3u8/.m3u/.mpd</translation>
+            <source>把 .m3u8/.m3u/.mpd 文件的打开方式设为 iDownloader</source>
+            <translation type="vanished">Установить iDownloader программой по умолчанию для .m3u8/.m3u/.mpd</translation>
         </message>
         <message>
             <location filename="../../../features/m3u8_pack/config.py" line="79" />
@@ -2921,14 +2921,14 @@ FFmpeg: {2}</translation>
         </message>
         <message>
             <location filename="../../view/windows/main_window.py" line="281" />
-            <source>浏览器扩展正在请求连接到 Ghost Downloader。
+            <source>浏览器扩展正在请求连接到 iDownloader。
 
 来源: {0}
 客户端: {1}
 扩展版本: {2}
 
 仅在你刚刚点击扩展里的"自动配对"时允许。</source>
-            <translation>Расширение браузера запрашивает подключение к Ghost Downloader.
+            <translation>Расширение браузера запрашивает подключение к iDownloader.
 
 Источник: {0}
 Клиент: {1}
@@ -4442,8 +4442,8 @@ FFmpeg: {2}</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="207" />
-            <source>浏览器扩展可通过 ghostdownloader:// 协议启动桌面端</source>
-            <translation>Расширение браузера может запускать клиент через протокол ghostdownloader://</translation>
+            <source>浏览器扩展可通过 idownloader:// 协议启动桌面端</source>
+            <translation>Расширение браузера может запускать клиент через протокол idownloader://</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="218" />
@@ -4452,8 +4452,8 @@ FFmpeg: {2}</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="219" />
-            <source>双击 {0} 文件时用 Ghost Downloader 打开</source>
-            <translation>Автоматически открывать {0} файлы в Ghost Downloader при двойном щелчке</translation>
+            <source>双击 {0} 文件时用 iDownloader 打开</source>
+            <translation>Автоматически открывать {0} файлы в iDownloader при двойном щелчке</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="226" />
@@ -4462,8 +4462,8 @@ FFmpeg: {2}</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="227" />
-            <source>点击 {0} 链接时唤起 Ghost Downloader</source>
-            <translation>Запускать Ghost Downloader при клике на ссылки {0}</translation>
+            <source>点击 {0} 链接时唤起 iDownloader</source>
+            <translation>Запускать iDownloader при клике на ссылки {0}</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="234" />
@@ -4623,8 +4623,8 @@ FFmpeg: {2}</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="356" />
-            <source>通过提供反馈来帮助我们改进 Ghost Downloader，也可查看日志排查问题</source>
-            <translation>Помогите нам улучшить Ghost Downloader, отправляя отзывы. Вы также можете просмотреть логи для устранения неполадок.</translation>
+            <source>通过提供反馈来帮助我们改进 iDownloader，也可查看日志排查问题</source>
+            <translation>Помогите нам улучшить iDownloader, отправляя отзывы. Вы также можете просмотреть логи для устранения неполадок.</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="365" />
@@ -4711,7 +4711,7 @@ FFmpeg: {2}</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="312" />
-            <source>在系统启动时静默运行 Ghost Downloader</source>
+            <source>在系统启动时静默运行 iDownloader</source>
             <translation>Тихий запуск при старте системы</translation>
         </message>
         <message>
@@ -4755,12 +4755,12 @@ FFmpeg: {2}</translation>
             <translation type="vanished">Зарегистрировать URL-протокол</translation>
         </message>
         <message>
-            <source>注册 ghostdownloader:// 协议，允许浏览器扩展启动桌面端</source>
-            <translation type="vanished">Зарегистрировать протокол ghostdownloader:// для запуска клиента из расширения</translation>
+            <source>注册 idownloader:// 协议，允许浏览器扩展启动桌面端</source>
+            <translation type="vanished">Зарегистрировать протокол idownloader:// для запуска клиента из расширения</translation>
         </message>
         <message>
-            <source>通过提供反馈来帮助我们改进 Ghost Downloader</source>
-            <translation type="vanished">Помогите улучшить Ghost Downloader, оставив отзыв</translation>
+            <source>通过提供反馈来帮助我们改进 iDownloader</source>
+            <translation type="vanished">Помогите улучшить iDownloader, оставив отзыв</translation>
         </message>
         <message>
             <location filename="../../view/pages/setting_page.py" line="358" />
@@ -5411,8 +5411,8 @@ FFmpeg: {2}</translation>
         </message>
         <message>
             <location filename="../../../features/m3u8_pack/i18n.py" line="14" />
-            <source>macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
-            <translation>macOS заблокировал доступ к папке загрузки, добавьте Ghost Downloader в Системные настройки &gt; Конфиденциальность и безопасность &gt; Полный доступ к диску</translation>
+            <source>macOS 阻止了访问下载目录，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 iDownloader</source>
+            <translation>macOS заблокировал доступ к папке загрузки, добавьте iDownloader в Системные настройки &gt; Конфиденциальность и безопасность &gt; Полный доступ к диску</translation>
         </message>
         <message>
             <location filename="../../../features/m3u8_pack/i18n.py" line="15" />
@@ -5537,8 +5537,8 @@ FFmpeg: {2}</translation>
         </message>
         <message>
             <location filename="../../view/pages/task_page.py" line="812" />
-            <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 Ghost Downloader</source>
-            <translation>macOS заблокировал удаление файлов, добавьте Ghost Downloader в Системные настройки &gt; Конфиденциальность и безопасность &gt; Полный доступ к диску</translation>
+            <source>macOS 阻止了文件删除，请在 系统设置 &gt; 隐私与安全性 &gt; 完全磁盘访问权限 中添加 iDownloader</source>
+            <translation>macOS заблокировал удаление файлов, добавьте iDownloader в Системные настройки &gt; Конфиденциальность и безопасность &gt; Полный доступ к диску</translation>
         </message>
         <message>
             <location filename="../../view/pages/task_page.py" line="817" />
@@ -5955,8 +5955,8 @@ FFmpeg: {2}</translation>
         <name>WelcomePage</name>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="275" />
-            <source>欢迎使用 Ghost Downloader</source>
-            <translation>Добро пожаловать в Ghost Downloader</translation>
+            <source>欢迎使用 iDownloader</source>
+            <translation>Добро пожаловать в iDownloader</translation>
         </message>
         <message>
             <location filename="../../view/windows/oobe_window.py" line="279" />

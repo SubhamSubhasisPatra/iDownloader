@@ -1,5 +1,5 @@
 # Python 侧通过反射访问 BridgeFlows 的字段
--keep class com.xychr.ghostdownloader.bridge.BridgeFlows { *; }
+-keep class io.github.subhamsubhasispatra.idownloader.bridge.BridgeFlows { *; }
 
 # Pack dex 在运行时动态加载 PackUi 实现类
--keep class * implements com.xychr.ghostdownloader.packs.PackUi { *; }
+-keep class * implements io.github.subhamsubhasispatra.idownloader.packs.PackUi { *; }

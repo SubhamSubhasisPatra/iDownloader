@@ -1,5 +1,5 @@
 /*
- * Ghost Downloader — "download this media" overlay (ISOLATED world).
+ * iDownloader — "download this media" overlay (ISOLATED world).
  * A floating button that locates the active <video> and asks the page-media attribution
  * engine (window.__gdPageMedia) to resolve the right stream, then hands it to the background.
  * Built as a standalone IIFE bundle (see scripts/build.mjs).
@@ -9,15 +9,15 @@ import type {VideoSessionState} from "../types";
 
 declare global {
   interface Window {
-    GhostDownloaderMediaButton?: { installed: boolean };
+    iDownloaderMediaButton?: { installed: boolean };
   }
 }
 
 const IDLE_TIMEOUT_MS = 3000;
 const FADE_DURATION_MS = 300;
 
-(function installGhostDownloaderMediaButton() {
-  if (window.GhostDownloaderMediaButton?.installed) { return; }
+(function installiDownloaderMediaButton() {
+  if (window.iDownloaderMediaButton?.installed) { return; }
   if (!globalThis.chrome?.runtime?.sendMessage) { return; }
 
   const host = document.createElement("div");
@@ -37,7 +37,7 @@ const FADE_DURATION_MS = 300;
   let dragOffsetY = 0;
   const DRAG_THRESHOLD = 5;
 
-  host.id = "ghostDownloaderMediaDownload";
+  host.id = "idownloaderMediaDownload";
   Object.assign(host.style, {
     display: "none",
     left: "0",
@@ -117,7 +117,7 @@ const FADE_DURATION_MS = 300;
             }
         </style>
         <div class="wrapper">
-            <button type="button" title="${chrome.i18n.getMessage("sendCurrentMediaToGhostDownloader")}">
+            <button type="button" title="${chrome.i18n.getMessage("sendCurrentMediaToiDownloader")}">
                 <svg class="icon" viewBox="0 0 20 20" aria-hidden="true">
                     <path fill="currentColor" d="M10 2.5a.75.75 0 0 1 .75.75v7.69l2.72-2.72a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0l-4-4a.75.75 0 0 1 1.06-1.06l2.72 2.72V3.25A.75.75 0 0 1 10 2.5Zm-5.25 11a.75.75 0 0 1 .75.75v1.25h9v-1.25a.75.75 0 0 1 1.5 0v2a.75.75 0 0 1-.75.75H4.75A.75.75 0 0 1 4 16.25v-2a.75.75 0 0 1 .75-.75Z"/>
                 </svg>
@@ -407,7 +407,7 @@ const FADE_DURATION_MS = 300;
     enableOverlay();
   });
 
-  window.GhostDownloaderMediaButton = {
+  window.iDownloaderMediaButton = {
     installed: true,
   };
 })();

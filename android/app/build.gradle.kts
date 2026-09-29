@@ -16,13 +16,13 @@ val signing = Properties().apply {
 }
 
 android {
-    namespace = "com.xychr.ghostdownloader"
+    namespace = "io.github.subhamsubhasispatra.idownloader"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.xychr.ghostdownloader"
+        applicationId = "io.github.subhamsubhasispatra.idownloader"
         minSdk = 28
         targetSdk = 37
         versionName = engineVersion

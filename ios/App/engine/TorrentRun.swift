@@ -21,13 +21,15 @@ actor TorrentEngine {
 
     func acquire() async throws -> Session {
         if let session { return session }
-        let new = Session(settings: makeSettings())
+        let settings = makeSettings()
+        let new = Session(settings: settings)
         try FileManager.default.createDirectory(
             at: Paths.appSupport.appending(path: "BTFiles", directoryHint: .isDirectory),
             withIntermediateDirectories: true)
-        if makeSettings().dhtEnabled {
+        if settings.dhtEnabled {
             try? await new.startDHT()
         }
+        try? await new.startListener()
         session = new
         return new
     }
