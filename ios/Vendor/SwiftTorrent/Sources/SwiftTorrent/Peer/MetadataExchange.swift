@@ -1,16 +1,17 @@
 import Foundation
 import Crypto
 
-/// BEP-9 ut_metadata implementation for fetching torrent metadata via magnet links.
+/// BEP-9 ut_metadata: fetches torrent metadata via magnet links, and — when
+/// constructed with the raw info dict — serves it to other magnet peers.
 public actor MetadataExchange {
     private let infoHash: InfoHash
     private let localMetadataID: UInt8 = 1
+    private let servingMetadata: Data?
 
     private var peerMetadataID: UInt8?
     private var metadataSize: Int?
     private var metadataPieces: [Int: Data] = [:]
     private var totalPieces: Int = 0
-    private var isComplete: Bool = false
 
     public static let metadataPieceSize = 16384
 
@@ -21,87 +22,108 @@ public actor MetadataExchange {
         case metadataComplete(TorrentInfo)
     }
 
+    /// Leech mode: request metadata from peers that have it.
     public init(infoHash: InfoHash) {
         self.infoHash = infoHash
+        self.servingMetadata = nil
+    }
+
+    /// Seed mode: serve the exact info-dict bytes whose SHA-1 is the info hash.
+    public init(infoHash: InfoHash, metadata: Data) {
+        self.infoHash = infoHash
+        self.servingMetadata = metadata
+        self.metadataSize = metadata.count
+        self.totalPieces = (metadata.count + Self.metadataPieceSize - 1) / Self.metadataPieceSize
     }
 
     /// Build extended handshake payload (bencoded).
     public func buildExtendedHandshake() -> Data {
-        let encoder = BencodeEncoder()
-        let msg = BencodeValue.dictionary([
-            (key: Data("m".utf8), value: BencodeValue.dictionary([
+        var root: [(key: Data, value: BencodeValue)] = [
+            (key: Data("m".utf8), value: .dictionary([
                 (key: Data("ut_metadata".utf8), value: .integer(Int64(localMetadataID)))
             ]))
-        ])
-        return encoder.encode(msg)
-    }
-
-    /// Handle an incoming extended message.
-    public func handleExtendedMessage(id: UInt8, payload: Data) -> Result {
-        if id == 0 {
-            return handleExtendedHandshake(payload: payload)
-        } else if id == localMetadataID {
-            return handleMetadataMessage(payload: payload)
+        ]
+        if let size = metadataSize {
+            root.append((key: Data("metadata_size".utf8), value: .integer(Int64(size))))
         }
-        return .none
+        return BencodeEncoder().encode(.dictionary(root))
     }
 
-    private func handleExtendedHandshake(payload: Data) -> Result {
+    /// Handle the peer's extended handshake: learn their ut_metadata id and, in
+    /// leech mode, request every metadata piece from them.
+    public func handleExtendedHandshake(payload: Data) -> Result {
         let decoder = BencodeDecoder()
         guard let value = try? decoder.decode(payload) else { return .none }
 
-        // Extract peer's ut_metadata ID
-        if let m = value["m"],
-           let utMetadata = m["ut_metadata"]?.integerValue {
+        if let m = value["m"], let utMetadata = m["ut_metadata"]?.integerValue {
             peerMetadataID = UInt8(utMetadata)
         }
-
-        // Extract metadata_size
         if let size = value["metadata_size"]?.integerValue {
             metadataSize = Int(size)
             totalPieces = (Int(size) + Self.metadataPieceSize - 1) / Self.metadataPieceSize
         }
 
-        // If we have both, start requesting metadata pieces
-        guard let peerID = peerMetadataID, metadataSize != nil else { return .none }
+        // We already have the metadata — nothing to fetch
+        guard servingMetadata == nil else { return .none }
+        guard let peerID = peerMetadataID, let size = metadataSize, size > 0, totalPieces > 0 else {
+            return .none
+        }
 
         var requests: [PeerMessage] = []
         for piece in 0..<totalPieces {
-            let requestPayload = buildMetadataRequest(piece: piece, peerMetadataID: peerID)
-            requests.append(.extended(id: peerID, payload: requestPayload))
+            requests.append(.extended(id: peerID, payload: buildMetadataRequest(piece: piece)))
         }
         return .requestMore(requests)
     }
 
-    private func handleMetadataMessage(payload: Data) -> Result {
+    /// Handle a ut_metadata payload (request, data, or reject) regardless of the
+    /// message id it arrived under.
+    public func handleMetadataPayload(payload: Data) -> Result {
         let decoder = BencodeDecoder()
         // The payload is: bencoded dict + raw data
-        // We need to find where the bencoded dict ends
-        guard let (value, range) = try? decoder.decodeWithRange(payload) else { return .none }
-
-        guard let msgType = value["msg_type"]?.integerValue,
+        guard let (value, range) = try? decoder.decodeWithRange(payload),
+              let msgType = value["msg_type"]?.integerValue,
               let piece = value["piece"]?.integerValue else { return .none }
 
-        let pieceIndex = Int(piece)
-
         switch msgType {
-        case 1: // data
-            let dataStart = range.upperBound
-            let pieceData = Data(payload[dataStart...])
-            metadataPieces[pieceIndex] = pieceData
+        case 0:  // request (we serve only if constructed with metadata)
+            return serveMetadataPiece(piece: Int(piece))
+        case 1:  // data
+            let pieceData = Data(payload[range.upperBound...])
+            metadataPieces[Int(piece)] = pieceData
 
-            // Check if we have all pieces
-            if metadataPieces.count == totalPieces {
+            if metadataSize != nil, metadataPieces.count == totalPieces {
                 return assembleMetadata()
             }
             return .none
-
-        case 2: // reject
-            return .none
-
-        default:
+        default:  // reject or unknown
             return .none
         }
+    }
+
+    private func serveMetadataPiece(piece: Int) -> Result {
+        var reject: BencodeValue {
+            .dictionary([
+                (key: Data("msg_type".utf8), value: .integer(2)),
+                (key: Data("piece".utf8), value: .integer(Int64(piece))),
+            ])
+        }
+        guard let data = servingMetadata, piece >= 0, piece < totalPieces else {
+            return .requestMore([.extended(id: localMetadataID, payload: BencodeEncoder().encode(reject))])
+        }
+        let start = piece * Self.metadataPieceSize
+        let end = min(start + Self.metadataPieceSize, data.count)
+        guard start < end else {
+            return .requestMore([.extended(id: localMetadataID, payload: BencodeEncoder().encode(reject))])
+        }
+
+        var response = BencodeEncoder().encode(.dictionary([
+            (key: Data("msg_type".utf8), value: .integer(1)),
+            (key: Data("piece".utf8), value: .integer(Int64(piece))),
+            (key: Data("total_size".utf8), value: .integer(Int64(data.count))),
+        ]))
+        response.append(data.subdata(in: start..<end))
+        return .requestMore([.extended(id: localMetadataID, payload: response)])
     }
 
     private func assembleMetadata() -> Result {
@@ -118,9 +140,7 @@ public actor MetadataExchange {
             return .none
         }
 
-        isComplete = true
-
-        // Parse into TorrentInfo
+        // Parse into TorrentInfo (carries the raw info bytes for serving later)
         guard let info = try? parseInfoFromMetadata(assembled) else { return .none }
         return .metadataComplete(info)
     }
@@ -169,11 +189,12 @@ public actor MetadataExchange {
             infoHash: infoHash, name: name, pieceLength: Int(pieceLength),
             pieces: pieces, totalSize: totalSize, files: files,
             isPrivate: isPrivate, comment: nil, createdBy: nil,
-            creationDate: nil, announceURL: nil, announceList: []
+            creationDate: nil, announceURL: nil, announceList: [],
+            rawInfo: data
         )
     }
 
-    private func buildMetadataRequest(piece: Int, peerMetadataID: UInt8) -> Data {
+    private func buildMetadataRequest(piece: Int) -> Data {
         let encoder = BencodeEncoder()
         let msg = BencodeValue.dictionary([
             (key: Data("msg_type".utf8), value: .integer(0)), // request

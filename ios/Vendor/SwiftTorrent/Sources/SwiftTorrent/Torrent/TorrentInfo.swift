@@ -15,6 +15,8 @@ public struct TorrentInfo: Sendable {
     public let creationDate: Date?
     public let announceURL: String?
     public let announceList: [[String]]
+    /// Exact bencoded bytes of the info dict — required to serve ut_metadata (BEP-9).
+    public let rawInfo: Data
 
     /// A single file within the torrent.
     public struct FileEntry: Sendable {
@@ -25,6 +27,25 @@ public struct TorrentInfo: Sendable {
 
     public var pieceCount: Int {
         pieces.count / 20
+    }
+
+    public init(infoHash: InfoHash, name: String, pieceLength: Int, pieces: Data,
+                totalSize: Int64, files: [FileEntry], isPrivate: Bool, comment: String?,
+                createdBy: String?, creationDate: Date?, announceURL: String?,
+                announceList: [[String]], rawInfo: Data = Data()) {
+        self.infoHash = infoHash
+        self.name = name
+        self.pieceLength = pieceLength
+        self.pieces = pieces
+        self.totalSize = totalSize
+        self.files = files
+        self.isPrivate = isPrivate
+        self.comment = comment
+        self.createdBy = createdBy
+        self.creationDate = creationDate
+        self.announceURL = announceURL
+        self.announceList = announceList
+        self.rawInfo = rawInfo
     }
 
     /// Parse a .torrent file from raw data.
@@ -100,7 +121,7 @@ public struct TorrentInfo: Sendable {
             pieces: pieces, totalSize: totalSize, files: files,
             isPrivate: isPrivate, comment: comment, createdBy: createdBy,
             creationDate: creationDate, announceURL: announceURL,
-            announceList: announceList
+            announceList: announceList, rawInfo: infoData
         )
     }
 

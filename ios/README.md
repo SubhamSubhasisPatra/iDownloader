@@ -27,6 +27,21 @@ so this folder re-implements the core natively in Swift:
   - BEP-11 ut_pex peer exchange (discover peers from connected peers)
   - extended handshake sent on every torrent, not just magnets
   - `removeTorrent(deleteFiles: true)` deletes only that torrent's files, not the whole save root
+  - **v5.2.0 engine overhaul** — fixes that made torrents actually download:
+    peer messages no longer dropped when they beat connection registration (the
+    stall-at-0 bug); extension support detected via a handshake callback (NIO
+    decoder copies had eaten it, so magnets never resolved); inbound `.request`
+    upload serving + listener socket (the app can now seed and accept peers);
+    ut_metadata routed by payload type, not guessed ids; NIO futures bridged
+    without `.get()` thread blocking; TCP_NODELAY + 4 MiB socket buffers.
+    Speed ceilings removed: fills request across pieces until the pipeline is
+    full; piece buffers preallocated with per-block dedupe (no COW copies);
+    endgame mode with a 250 ms re-fire cooldown; one-request-per-generation
+    guard (blocks are never re-requested while in flight — kills duplicate
+    request storms); rate-limit knob now enforced; live download/upload rates
+    reported; trackers announced in parallel; DHT re-lookup 90 s → 45 s.
+    Verified by loopback swarm tests: two seeders + leecher complete
+    byte-exact, magnet resolves metadata over a real connection.
 - **GitHub acceleration** — 21 proxy sites plus auto site racing (first response wins).
 - Categories (Videos / Music / Documents / Compressed / Programs / APKs / Images) with
   optional category subfolders, native sidebar, multi-column table on wide screens,
