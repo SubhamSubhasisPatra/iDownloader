@@ -36,9 +36,15 @@ public actor TorrentHandle {
     private var completionContinuations: [UInt64: CheckedContinuation<Void, Error>] = [:]
     private var nextWaitID: UInt64 = 0
     private let dhtNode: DHTNode?
+    /// The port our peer listener actually bound; trackers and DHT announce it.
+    private let listenPort: UInt16
+    /// Downloaded-file selection (indexes into `info.files`); nil means every file.
+    private var selectedFileIndexes: Set<Int>?
+    /// Sequential mode: pieces arrive in index order (files fill one by one).
+    private var isSequential = false
 
     public init(params: AddTorrentParams, settings: SessionSettings, group: EventLoopGroup,
-                dhtNode: DHTNode? = nil) {
+                dhtNode: DHTNode? = nil, listenPort: UInt16 = 6881) {
         let hash = params.infoHash!
         self.infoHash = hash
         self.info = params.torrentInfo
@@ -47,6 +53,7 @@ public actor TorrentHandle {
         self.peerID = generatePeerID()
         self.group = group
         self.dhtNode = dhtNode
+        self.listenPort = listenPort
         self.peerManager = PeerManager(
             infoHash: hash.bytes, peerID: peerID, group: group,
             maxConnections: settings.maxConnectionsPerTorrent)
@@ -60,7 +67,13 @@ public actor TorrentHandle {
     private func setupDownloadComponents(info: TorrentInfo) async {
         self.info = info
         let pm = PieceManager(info: info)
-        let pp = PiecePicker(pieceCount: info.pieceCount)
+        var pp = PiecePicker(pieceCount: info.pieceCount)
+        pp.setSequential(isSequential)
+        if let selected = selectedFileIndexes {
+            var allowed = Self.allowedPieces(info: info, selected: selected)
+            await pm.setAllowedPieces(allowed)
+            pp.setAllowedPieces(allowed)
+        }
         let fs = FileStorage(info: info)
         let dio = DiskIO(basePath: savePath, fileStorage: fs)
         self.pieceManager = pm
@@ -80,6 +93,19 @@ public actor TorrentHandle {
             pieceCount: info.pieceCount
         )
         await peerManager.configureMetadataExchange(servingExchange)
+    }
+
+    /// The pieces that overlap any selected file.
+    private static func allowedPieces(info: TorrentInfo, selected: Set<Int>) -> Bitfield {
+        var allowed = Bitfield(count: info.pieceCount)
+        for (index, file) in info.files.enumerated() where selected.contains(index) {
+            let first = Int(file.offset / Int64(info.pieceLength))
+            let last = Int((file.offset + max(file.length - 1, 0)) / Int64(info.pieceLength))
+            for piece in first...last {
+                allowed.set(piece)
+            }
+        }
+        return allowed
     }
 
     /// Complete initialization for .torrent-file init path (must be called after init).
@@ -114,10 +140,17 @@ public actor TorrentHandle {
 
         // Announce to trackers
         if let trackerMgr = trackerManager {
-            let left = info?.totalSize ?? 0
+            let left: Int64
+            if let total = info?.totalSize {
+                left = total - totalDownloaded
+            } else {
+                // Magnet: size unknown. Announcing left=0 marks us as a seed and
+                // some trackers stop returning leech peers, so report a placeholder.
+                left = 16384
+            }
             let params = AnnounceParams(
-                infoHash: infoHash, peerID: peerID, port: 6881,
-                left: left - totalDownloaded, event: "started"
+                infoHash: infoHash, peerID: peerID, port: listenPort,
+                left: left, event: "started"
             )
             await announceToAllTrackers(trackerMgr: trackerMgr, params: params)
             startReannounceLoop(trackerMgr: trackerMgr)
@@ -126,20 +159,32 @@ public actor TorrentHandle {
         startDHTLoop()
     }
 
-    /// Periodic DHT get_peers lookup: on thin swarms trackers alone miss most leeches.
+    /// Periodic DHT get_peers + announce_peer lookup. The routing table needs a
+    /// few seconds after bootstrap to hold usable nodes, so the first lookup
+    /// waits for it; while no peers have been found the cadence stays fast.
     private func startDHTLoop() {
         guard let dhtNode else { return }
         dhtTask?.cancel()
         dhtTask = Task { [weak self] in
+            // Warm-up: bootstrap responses land 1–3 s after start; looking up
+            // against an empty routing table finds nothing.
+            for _ in 0..<20 {
+                try? await Task.sleep(for: .milliseconds(500))
+                if Task.isCancelled { return }
+                if await dhtNode.nodeCount() > 0 { break }
+            }
+            var attempt = 0
             while !Task.isCancelled {
                 guard let self else { break }
                 let traversal = DHTTraversal(dhtNode: dhtNode)
-                if let peers = try? await traversal.getPeers(infoHash: self.infoHash) {
-                    for (address, port) in peers {
-                        await self.peerManager.addPeer(address: address, port: port)
-                    }
+                let found = try? await traversal.getPeers(infoHash: self.infoHash, announcePort: self.listenPort)
+                for (address, port) in found ?? [] {
+                    await self.peerManager.addPeer(address: address, port: port)
                 }
-                try? await Task.sleep(for: .seconds(45))
+                // Fast retries (10 s) until peers show up, then a steady 45 s.
+                attempt = (found?.isEmpty ?? true) ? attempt + 1 : 0
+                let interval = attempt > 0 && attempt <= 5 ? 10 : 45
+                try? await Task.sleep(for: .seconds(interval))
             }
         }
     }
@@ -211,12 +256,11 @@ public actor TorrentHandle {
         }
     }
 
-    /// Periodically re-announce to trackers.
+    /// Periodically re-announce to trackers. A failed announce retries after
+    /// 30 s — the tracker's success interval only applies once it responded.
     private func startReannounceLoop(trackerMgr: TrackerManager) {
         reannounceTask = Task { [weak self] in
             while !Task.isCancelled {
-                let interval = await trackerMgr.getInterval()
-                try? await Task.sleep(for: .seconds(max(interval, 60)))
                 guard let self, !Task.isCancelled else { break }
 
                 let left = await self.getRemainingBytes()
@@ -225,21 +269,28 @@ public actor TorrentHandle {
                 let uploaded = await self.totalUploaded
                 let downloaded = await self.totalDownloaded
                 let params = AnnounceParams(
-                    infoHash: infoHash, peerID: peerID, port: 6881,
+                    infoHash: infoHash, peerID: peerID, port: self.listenPort,
                     uploaded: uploaded, downloaded: downloaded,
                     left: left
                 )
+                let succeeded: Bool
                 if let response = try? await trackerMgr.announce(params: params) {
                     for (address, port) in response.peers {
                         await self.peerManager.addPeer(address: address, port: port)
                     }
+                    succeeded = true
+                } else {
+                    succeeded = false
                 }
+
+                let interval = succeeded ? await trackerMgr.getInterval() : 30
+                try? await Task.sleep(for: .seconds(max(interval, 60)))
             }
         }
     }
 
     private func getRemainingBytes() -> Int64 {
-        (info?.totalSize ?? 0) - totalDownloaded
+        (info?.totalSize ?? 16384) - totalDownloaded
     }
 
     /// Manually add a peer (trackers, DHT, PEX, or local discovery).
@@ -300,7 +351,8 @@ public actor TorrentHandle {
             numPeers: await peerManager.connectionCount,
             numSeeds: await peerManager.seedCount(),
             piecesCompleted: completed?.popcount ?? 0,
-            piecesTotal: info?.pieceCount ?? 0
+            piecesTotal: info?.pieceCount ?? 0,
+            files: (info?.files.count ?? 0) > 1 ? info?.files : nil
         )
     }
 
@@ -343,6 +395,56 @@ public actor TorrentHandle {
     /// Returns the file entries for this torrent, or nil if metadata is not yet available.
     public func getFiles() -> [TorrentInfo.FileEntry]? {
         info?.files
+    }
+
+    /// Restrict the download to the given file indexes. Selection made before
+    /// the metadata arrives is applied once it does. Calling with an empty set
+    /// or nil selects every file again.
+    public func selectFiles(_ indexes: Set<Int>?) async {
+        selectedFileIndexes = (indexes?.isEmpty ?? true) ? nil : indexes
+        if let info {
+            await applySelection(info: info)
+        }
+    }
+
+    /// Toggle sequential (in-order) piece picking.
+    public func setSequential(_ sequential: Bool) async {
+        isSequential = sequential
+        if var picker = piecePicker {
+            picker.setSequential(sequential)
+            piecePicker = picker
+        }
+    }
+
+    private func applySelection(info: TorrentInfo) async {
+        guard let selected = selectedFileIndexes else { return }
+        let allowed = Self.allowedPieces(info: info, selected: selected)
+        await pieceManager?.setAllowedPieces(allowed)
+        if var picker = piecePicker {
+            picker.setAllowedPieces(allowed)
+            piecePicker = picker
+        }
+    }
+
+    /// Byte-weighted completion fraction per file (for the file list UI).
+    public func fileProgresses() async -> [Double] {
+        guard let info, let pm = pieceManager else { return [] }
+        var result: [Double] = []
+        for file in info.files {
+            let first = Int(file.offset / Int64(info.pieceLength))
+            let last = Int((file.offset + max(file.length - 1, 0)) / Int64(info.pieceLength))
+            var done: Int64 = 0
+            for piece in first...last {
+                if await pm.hasPiece(piece) {
+                    let pieceStart = Int64(piece) * Int64(info.pieceLength)
+                    let pieceEnd = pieceStart + Int64(await pm.expectedPieceSize(piece))
+                    let overlap = min(pieceEnd, file.offset + file.length) - max(pieceStart, file.offset)
+                    done += max(overlap, 0)
+                }
+            }
+            result.append(file.length > 0 ? Double(done) / Double(file.length) : 1.0)
+        }
+        return result
     }
 
     /// Generate resume data for saving state.

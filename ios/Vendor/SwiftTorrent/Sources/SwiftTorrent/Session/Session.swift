@@ -30,7 +30,9 @@ public actor Session {
             return existing
         }
 
-        let handle = TorrentHandle(params: params, settings: settings, group: group, dhtNode: dhtNode)
+        let handle = TorrentHandle(params: params, settings: settings, group: group,
+                                   dhtNode: dhtNode,
+                                   listenPort: listeningPort ?? settings.listenPort)
         await handle.finishInitialization()
         torrents[hash] = handle
 

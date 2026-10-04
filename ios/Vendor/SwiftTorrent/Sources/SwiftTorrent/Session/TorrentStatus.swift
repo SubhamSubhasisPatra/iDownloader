@@ -26,4 +26,6 @@ public struct TorrentStatus: Sendable {
     public let numSeeds: Int
     public let piecesCompleted: Int
     public let piecesTotal: Int
+    /// Entries of a multi-file torrent (single-file torrents report nil).
+    public let files: [TorrentInfo.FileEntry]?
 }

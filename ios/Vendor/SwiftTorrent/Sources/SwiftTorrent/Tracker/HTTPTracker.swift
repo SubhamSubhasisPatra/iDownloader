@@ -10,27 +10,43 @@ public struct HTTPTracker: Sendable {
 
     /// Announce to the tracker.
     public func announce(params: AnnounceParams) async throws -> AnnounceResponse {
-        var components = URLComponents(string: announceURL)
-        components?.queryItems = [
-            URLQueryItem(name: "info_hash", value: params.infoHash.urlEncoded),
-            URLQueryItem(name: "peer_id", value: String(data: params.peerID, encoding: .ascii) ?? ""),
-            URLQueryItem(name: "port", value: String(params.port)),
-            URLQueryItem(name: "uploaded", value: String(params.uploaded)),
-            URLQueryItem(name: "downloaded", value: String(params.downloaded)),
-            URLQueryItem(name: "left", value: String(params.left)),
-            URLQueryItem(name: "compact", value: "1"),
-            URLQueryItem(name: "numwant", value: String(params.numWant)),
-        ]
+        // The query is assembled by hand: URLComponents.queryItems re-encodes
+        // values, so an already-encoded info_hash would arrive double-encoded
+        // and every tracker would reject the announce with "unknown torrent".
+        var query = "info_hash=\(Self.encode(params.infoHash.bytes))"
+        query += "&peer_id=\(Self.encode(params.peerID))"
+        query += "&port=\(params.port)"
+        query += "&uploaded=\(params.uploaded)"
+        query += "&downloaded=\(params.downloaded)"
+        query += "&left=\(params.left)"
+        query += "&compact=1"
+        query += "&numwant=\(params.numWant)"
         if let event = params.event {
-            components?.queryItems?.append(URLQueryItem(name: "event", value: event))
+            query += "&event=\(event)"
         }
 
-        guard let url = components?.url else {
+        guard let url = URL(string: announceURL + (announceURL.contains("?") ? "&" : "?") + query) else {
             throw TrackerError.invalidURL
         }
 
         let (data, _) = try await URLSession.shared.data(from: url)
         return try parseAnnounceResponse(data)
+    }
+
+    /// RFC 3986 encoding for raw byte strings (info_hash, peer_id). An explicit
+    /// ASCII allowlist is required: CharacterSet.alphanumerics is Unicode-aware
+    /// and would let high bytes (e.g. 0xD1 "Ñ") pass through as multi-byte UTF-8.
+    private static func encode(_ data: Data) -> String {
+        var out = ""
+        for byte in data {
+            switch byte {
+            case 0x41...0x5A, 0x61...0x7A, 0x30...0x39, 0x2D, 0x2E, 0x5F, 0x7E:
+                out.append(Character(UnicodeScalar(byte)))
+            default:
+                out.append(contentsOf: String(format: "%%%02X", byte))
+            }
+        }
+        return out
     }
 
     private func parseAnnounceResponse(_ data: Data) throws -> AnnounceResponse {

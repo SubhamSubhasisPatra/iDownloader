@@ -35,6 +35,8 @@ public actor PieceManager {
     /// Blocks already requested this generation — a block is requested once and
     /// only re-requested when its generation resets (timeout, corrupt, disconnect).
     private var requested: [Int: Bitfield]
+    /// Pieces that belong to the selected files; nil when everything is selected.
+    private var allowed: Bitfield?
 
     public private(set) var startPieceCalls: Int64 = 0
     public private(set) var startPieceCreations: Int64 = 0
@@ -178,6 +180,21 @@ public actor PieceManager {
         case notAssembling
     }
 
+    /// Restrict completion accounting to the selected files' pieces.
+    public func setAllowedPieces(_ bitfield: Bitfield) {
+        allowed = bitfield
+    }
+
+    /// The selection-aware completion mask: `allowed` intersected with completed.
+    private func effectiveCompleted() -> (mask: Bitfield, total: Int) {
+        guard let allowed else { return (completed, pieceCount) }
+        var relevant = allowed
+        for index in 0..<pieceCount where relevant.get(index) && !completed.get(index) {
+            relevant.clear(index)
+        }
+        return (relevant, allowed.popcount)
+    }
+
     /// Verify and complete a piece.
     public func completePiece(_ index: Int) -> PieceCompletion {
         guard let buffer = pieceBuffers[index] else { return .notAssembling }
@@ -207,15 +224,16 @@ public actor PieceManager {
         completed.get(index)
     }
 
-    /// Check if all pieces are complete.
+    /// Check if all selected pieces are complete.
     public func isComplete() -> Bool {
-        completed.allSet
+        effectiveCompleted().mask.allSet
     }
 
-    /// Get progress as a fraction.
+    /// Get progress as a fraction (of the selected files).
     public func progress() -> Double {
-        guard pieceCount > 0 else { return 1.0 }
-        return Double(completed.popcount) / Double(pieceCount)
+        let (mask, total) = effectiveCompleted()
+        guard total > 0 else { return 1.0 }
+        return Double(mask.popcount) / Double(total)
     }
 
     /// Expected size of a specific piece.
