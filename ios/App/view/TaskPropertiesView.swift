@@ -1,9 +1,12 @@
 import SwiftUI
 import QuickLook
+import SwiftTorrent
 
 /// Detailed task information (Properties).
 struct TaskPropertiesView: View {
     let record: TaskRecord
+    let service: TaskService
+    @State private var torrentFiles: (files: [TorrentInfo.FileEntry], progress: [Double])?
 
     var body: some View {
         Form {
@@ -17,6 +20,9 @@ struct TaskPropertiesView: View {
                 LabeledContent("Type", value: record.kind == "torrent" ? "BitTorrent" : "HTTP")
                 LabeledContent("URL", value: record.url)
                 LabeledContent("Status", value: statusText)
+                if record.kind == "torrent" && record.sequential {
+                    LabeledContent("Order", value: String(localized: "Sequential"))
+                }
                 if !record.errorMessage.isEmpty {
                     Text(record.errorMessage)
                         .foregroundStyle(.red)
@@ -33,6 +39,31 @@ struct TaskPropertiesView: View {
                     LabeledContent("Time Left", value: toReadableTime(seconds))
                 }
             }
+            if let torrentFiles {
+                Section("Contents") {
+                    ForEach(Array(torrentFiles.files.enumerated()), id: \.offset) { index, file in
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(fileName(of: file.path))
+                                .font(.callout)
+                                .lineLimit(2)
+                            HStack {
+                                Text(toReadableSize(file.length))
+                                if torrentFiles.progress.indices.contains(index) {
+                                    Text("\(Int(torrentFiles.progress[index] * 100))%")
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            if torrentFiles.progress.indices.contains(index),
+                               torrentFiles.progress[index] > 0, torrentFiles.progress[index] < 1 {
+                                ProgressView(value: torrentFiles.progress[index])
+                            }
+                        }
+                        .padding(.vertical, 1)
+                    }
+                }
+            }
             Section("Dates") {
                 LabeledContent("Added", value: dateText(record.createdAt))
                 if record.completedAt > 0 {
@@ -42,6 +73,15 @@ struct TaskPropertiesView: View {
         }
         .navigationTitle("Properties")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            torrentFiles = await service.torrentFileStatus(record)
+        }
+    }
+
+    private func fileName(of path: String) -> String {
+        var parts = path.split(separator: "/").map(String.init)
+        if parts.count > 1 { parts.removeFirst() }  // drop the torrent name folder
+        return parts.joined(separator: "/")
     }
 
     private var sizeText: String {

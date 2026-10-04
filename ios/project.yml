@@ -43,6 +43,26 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+        CFBundleURLTypes:
+          - CFBundleURLName: Magnet link
+            CFBundleURLSchemes:
+              - magnet
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: BitTorrent Metainfo
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - org.bittorrent.torrent
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: org.bittorrent.torrent
+            UTTypeDescription: BitTorrent Metainfo
+            UTTypeConformsTo:
+              - public.data
+            UTTypeTagSpecification:
+              public.filename-extension:
+                - torrent
+              public.mime-type:
+                - application/x-bittorrent
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:

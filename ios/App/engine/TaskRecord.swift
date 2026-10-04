@@ -1,4 +1,5 @@
 import Foundation
+import SwiftTorrent
 
 enum TaskStatus: String, Codable {
     case waiting
@@ -24,11 +25,16 @@ struct TaskRecord: Identifiable, Codable {
     var relativeFolder: String = ""
     var kind: String = "http"
     var peers: Int = 0
+    /// Torrent-only: indexes into the torrent's file list; nil means every file.
+    var selectedFiles: [Int]?
+    /// Torrent-only: fetch pieces in order so the first files complete first.
+    var sequential: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case taskId, name, url, status, fileSize, receivedBytes, speed
         case createdAt, completedAt, errorMessage, segmentCount
         case categoryId, relativeFolder, kind, peers
+        case selectedFiles, sequential
     }
 
     init(taskId: String, name: String, url: String) {
@@ -54,6 +60,8 @@ struct TaskRecord: Identifiable, Codable {
         relativeFolder = try c.decodeIfPresent(String.self, forKey: .relativeFolder) ?? ""
         kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? "http"
         peers = try c.decodeIfPresent(Int.self, forKey: .peers) ?? 0
+        selectedFiles = try c.decodeIfPresent([Int].self, forKey: .selectedFiles)
+        sequential = try c.decodeIfPresent(Bool.self, forKey: .sequential) ?? false
     }
 
     var id: String { taskId }
@@ -62,7 +70,7 @@ struct TaskRecord: Identifiable, Codable {
         return min(1, Double(receivedBytes) / Double(fileSize))
     }
 
-    var canPause: Bool { segmentCount > 0 }
+    var canPause: Bool { kind == "torrent" || segmentCount > 0 }
 
     var category: Category { Category.byId(categoryId) }
 
@@ -86,6 +94,35 @@ private extension Decoder {
                               key: TaskRecord.CodingKeys) throws -> T {
         try container.decode(T.self, forKey: key)
     }
+}
+
+/// Unconfirmed torrent waiting for the user's confirmation in the add sheet.
+/// Carries everything `TaskService.addTorrent` needs to create the task.
+struct TorrentDraft: Identifiable {
+    let taskId: String
+    /// Magnet URI or .torrent URL; empty when the user picked a local file.
+    var url: String = ""
+    /// Raw .torrent bytes when the source was a file or URL.
+    var blobData: Data?
+    /// Parsed metadata; nil for magnets whose metadata has not arrived yet.
+    var info: TorrentInfo?
+
+    /// Display name before metadata is known (magnet dn or the info hash).
+    var displayName: String {
+        if let name = info?.name { return name }
+        if url.hasPrefix("magnet:") {
+            let dn = URLComponents(string: url)?.queryItems?.first { $0.name == "dn" }?.value ?? ""
+            let decoded = dn.replacingOccurrences(of: "+", with: " ").removingPercentEncoding ?? dn
+            if !decoded.trimmingCharacters(in: .whitespaces).isEmpty { return decoded }
+        }
+        return String(localized: "Fetching metadata…")
+    }
+
+    var totalSize: Int64 { info?.totalSize ?? 0 }
+}
+
+extension TorrentDraft {
+    var id: String { taskId }
 }
 
 struct DownloadError: LocalizedError {

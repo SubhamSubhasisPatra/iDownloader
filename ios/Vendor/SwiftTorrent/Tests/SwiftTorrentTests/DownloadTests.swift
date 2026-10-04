@@ -201,7 +201,7 @@ final class PiecePickerIntegrationTests: XCTestCase {
         picker.addPeerBitfield(peerBF)
 
         let have = Bitfield(count: 4)
-        let picks = picker.pickMultiple(have: have, peerHas: peerBF, count: 3)
+        let picks = picker.pickMultiple(have: have, peerHas: peerBF, count: 3, inProgress: [])
         XCTAssertEqual(picks.count, 3)
     }
 }

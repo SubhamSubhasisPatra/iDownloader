@@ -140,7 +140,8 @@ public actor PeerManager {
         // can't know whether extension negotiation is possible.
         await conn.waitForHandshake(timeout: 10)
 
-        let state = peerStates[key]!
+        // The peer may have dropped during the handshake wait.
+        guard let state = peerStates[key], connections[key] === conn else { return }
         await state.setAmInterested(true)
         try? await conn.send(.interested)
 
@@ -209,7 +210,13 @@ public actor PeerManager {
 
         case .choke:
             await state.setPeerChoking(true)
-            await state.clearPendingRequests()
+            // The peer won't serve our outstanding requests; release them so the
+            // request generation doesn't bury those blocks until the 20 s timeout.
+            let pending = await state.getPendingRequests()
+            for request in pending.keys {
+                await state.removePendingRequest(request)
+                await pieceManager?.clearRequested(pieceIndex: request.pieceIndex, offset: request.offset)
+            }
 
         case .unchoke:
             await state.setPeerChoking(false)
@@ -231,8 +238,6 @@ public actor PeerManager {
             }
 
         case .request(let index, let begin, let length):
-            if index == 7 && begin == 114688 {
-            }
             await serveUpload(index: Int(index), begin: Int(begin), length: Int(length), key: key)
 
         case .piece(let index, let begin, let block):
@@ -247,10 +252,6 @@ public actor PeerManager {
             let dup = await pm.isBlockReceived(pieceIndex: pieceIndex, offset: offset)
             if dup { dupBlocksReceived += 1 }
             let pieceDone = await pm.addBlock(pieceIndex: pieceIndex, offset: offset, data: block)
-            if pieceIndex == 7 && offset == 114688 {
-                let hp = await pm.hasPiece(pieceIndex)
-                let hb = await pm.hasBuffer(pieceIndex)
-            }
             if !dup, !(await pm.hasBuffer(pieceIndex)) { blocksDroppedNoBuffer += 1 }
             if pieceDone {
                 await onPieceComplete(index: pieceIndex)
@@ -279,8 +280,6 @@ public actor PeerManager {
               begin + length <= piece.count else { return }
 
         uploadedBytes += Int64(length)
-        if index == 7 && begin == 114688 {
-        }
         try? await conn.send(.piece(
             index: UInt32(index), begin: UInt32(begin),
             block: piece.subdata(in: begin..<(begin + length))))
@@ -289,9 +288,6 @@ public actor PeerManager {
     private func onPieceComplete(index pieceIndex: Int) async {
         guard let pm = pieceManager else { return }
         let outcome = await pm.completePiece(pieceIndex)
-        if pieceIndex == 7 {
-            let hp = await pm.hasPiece(pieceIndex)
-        }
         switch outcome {
         case .verified(let data):
             if let dio = diskIO {
@@ -326,22 +322,31 @@ public actor PeerManager {
     private func handleExtendedMessage(extID: UInt8, payload: Data, from key: String) async {
         if extID == 0 {
             recordRemoteExtensionIDs(payload: payload, key: key)
-        } else if extID == pexPeerIDs[key] {
-            await handleIncomingPEX(payload: payload)
         }
 
         guard let metaEx = metadataExchange else { return }
-        let result: MetadataExchange.Result
+
         if extID == 0 {
-            result = await metaEx.handleExtendedHandshake(payload: payload)
-        } else if extID != pexPeerIDs[key] {
-            // ut_metadata traffic: data arrives under the peer's advertised id,
-            // requests under ours — the payload's msg_type distinguishes them.
-            result = await metaEx.handleMetadataPayload(payload: payload)
-        } else {
+            let result = await metaEx.handleExtendedHandshake(payload: payload)
+            await deliver(result, to: key)
             return
         }
-        await deliver(result, to: key)
+
+        // Route by payload content: every ut_metadata message carries msg_type
+        // (BEP-9), while clients sometimes advertise a ut_pex id that collides
+        // with the id their ut_metadata data actually arrives under.
+        if Self.isMetadataPayload(payload) {
+            let result = await metaEx.handleMetadataPayload(payload: payload)
+            await deliver(result, to: key)
+        } else if extID == pexPeerIDs[key] {
+            await handleIncomingPEX(payload: payload)
+        }
+    }
+
+    /// True when the extended payload is ut_metadata (request, data, or reject).
+    private static func isMetadataPayload(_ payload: Data) -> Bool {
+        guard let decoded = try? BencodeDecoder().decode(payload) else { return false }
+        return decoded["msg_type"] != nil
     }
 
     private func deliver(_ result: MetadataExchange.Result, to key: String) async {
@@ -436,7 +441,9 @@ public actor PeerManager {
 
         let completed = await pm.getCompleted()
         let peerBF = await state.getPeerBitfield()
-        let candidates = picker.pickMultiple(have: completed, peerHas: peerBF, count: 8)
+        let inProgress = await pm.inProgressPieces()
+        let candidates = picker.pickMultiple(have: completed, peerHas: peerBF,
+                                             count: 8, inProgress: Set(inProgress))
 
         for pieceIndex in candidates {
             guard await state.canRequest else { break }

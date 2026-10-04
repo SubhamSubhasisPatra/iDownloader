@@ -137,6 +137,115 @@ final class TaskService {
         return nil
     }
 
+    // MARK: - Torrent drafts (add sheet with metadata preview)
+
+    /// Resolves user input (magnet, .torrent URL, or picked file) into a draft
+    /// the add sheet can show metadata for before the task is created.
+    /// Returns (draft, nil) on success or (nil, error message) on failure.
+    func prepareTorrent(text: String?, fileURL: URL?) async -> (draft: TorrentDraft?, error: String?) {
+        let taskId = newTaskId()
+        var draft = TorrentDraft(taskId: taskId, url: "", blobData: nil, info: nil)
+
+        if let fileURL {
+            do {
+                let data = try Data(contentsOf: fileURL)
+                draft.info = try TorrentInfo.parse(from: data)
+                draft.blobData = data
+            } catch {
+                return (nil, String(localized: "Not a valid torrent file"))
+            }
+            return (draft, nil)
+        }
+
+        guard var text, !text.isEmpty else {
+            return (nil, String(localized: "Invalid URL"))
+        }
+        if URL(string: text) == nil {
+            text = text.replacingOccurrences(of: " ", with: "%20")
+        }
+        guard let rawURL = URL(string: text), let scheme = rawURL.scheme?.lowercased() else {
+            return (nil, String(localized: "Invalid URL"))
+        }
+
+        if scheme == "magnet" {
+            draft.url = rawURL.absoluteString
+            return (draft, nil)
+        }
+        guard scheme == "http" || scheme == "https",
+              rawURL.pathExtension.lowercased() == "torrent" else {
+            return (nil, String(localized: "Invalid URL"))
+        }
+        do {
+            var request = URLRequest(url: rawURL)
+            request.timeoutInterval = 20
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+                throw DownloadError.server((response as? HTTPURLResponse)?.statusCode ?? 400)
+            }
+            guard data.count < 15 << 20 else {
+                throw DownloadError(message: String(localized: "Torrent file is too large"))
+            }
+            draft.info = try TorrentInfo.parse(from: data)
+            draft.blobData = data
+            draft.url = rawURL.absoluteString
+        } catch {
+            return (nil, error.localizedDescription)
+        }
+        return (draft, nil)
+    }
+
+    /// Fetches metadata for a magnet draft through the shared session so the add
+    /// sheet can show the file list. The handle is paused and kept in the
+    /// session; the task run later resumes it.
+    func fetchMetadata(for draft: inout TorrentDraft) async -> Bool {
+        if draft.info != nil { return true }
+        guard draft.url.hasPrefix("magnet:") else { return false }
+        guard let info = await TorrentEngine.shared.fetchMetadata(draft.url) else {
+            return false
+        }
+        draft.info = info
+        return true
+    }
+
+    /// Creates the torrent task from a confirmed draft. Returns an error message; nil on success.
+    func addTorrent(_ draft: TorrentDraft, selection: Set<Int>?, sequential: Bool) -> String? {
+        let info = draft.info
+        let baseName = info?.name ?? magnetDisplayName(draft.url)
+        var record = TaskRecord(taskId: draft.taskId, name: toSafeFilename(baseName, fallback: "torrent"),
+                                url: draft.url)
+        record.kind = "torrent"
+        record.sequential = sequential
+        if let selection, !selection.isEmpty, info != nil, selection.count < info!.files.count {
+            record.selectedFiles = selection.sorted()
+        }
+
+        if let blobData = draft.blobData {
+            do {
+                try FileManager.default.createDirectory(
+                    at: Paths.torrentBlob(draft.taskId).deletingLastPathComponent(), withIntermediateDirectories: true)
+                try blobData.write(to: Paths.torrentBlob(draft.taskId), options: .atomic)
+            } catch {
+                return error.localizedDescription
+            }
+        }
+
+        tasks.insert(record, at: 0)
+        save()
+        if isAutoStart {
+            scheduleNext()
+        }
+        return nil
+    }
+
+    /// Drops a draft the user cancelled: no record was created, but a metadata
+    /// handle may still live in the session.
+    func discardTorrentDraft(_ draft: TorrentDraft) {
+        if draft.info != nil, draft.url.hasPrefix("magnet:"),
+           let hash = (try? AddTorrentParams.fromMagnet(draft.url))?.infoHash {
+            Task { await TorrentEngine.shared.remove(hash, deleteFiles: true) }
+        }
+    }
+
     private func magnetDisplayName(_ magnet: String) -> String {
         guard let components = URLComponents(string: magnet) else { return "torrent" }
         let dn = components.queryItems?.first { $0.name == "dn" }?.value ?? ""
@@ -192,7 +301,22 @@ final class TaskService {
         tasks[index].completedAt = 0
         tasks[index].errorMessage = ""
         save()
-        scheduleNext()
+        if tasks[index].kind == "torrent" {
+            // Drop the session handle and its staging data; the blob (for
+            // .torrent tasks) stays so the run can re-add the torrent fresh.
+            let url = tasks[index].url
+            try? FileManager.default.removeItem(at: Paths.appSupport
+                .appending(path: "BTFiles", directoryHint: .isDirectory)
+                .appending(path: taskId, directoryHint: .isDirectory))
+            Task {
+                if let hash = TorrentEngine.infoHash(taskId: taskId, url: url) {
+                    await TorrentEngine.shared.remove(hash, deleteFiles: true)
+                }
+                self.scheduleNext()
+            }
+        } else {
+            scheduleNext()
+        }
     }
 
     func rename(_ taskId: String, to newName: String) {
@@ -227,8 +351,11 @@ final class TaskService {
             let record = tasks[index]
             if record.kind == "torrent" {
                 let isDone = record.status == .completed
+                if isDone && deleteFile {
+                    try? FileManager.default.removeItem(at: record.outputURL)
+                }
                 if let hash = TorrentEngine.infoHash(taskId: taskId, url: record.url) {
-                    Task { await TorrentEngine.shared.remove(hash, deleteFiles: !isDone || deleteFile) }
+                    Task { await TorrentEngine.shared.remove(hash, deleteFiles: !isDone) }
                 }
                 try? FileManager.default.removeItem(at: Paths.appSupport
                     .appending(path: "BTFiles", directoryHint: .isDirectory)
@@ -263,6 +390,13 @@ final class TaskService {
 
     func applyEngineSettings() {
         Task { await TorrentEngine.shared.applySettings() }
+    }
+
+    /// Live file list + per-file progress for a torrent task's properties view.
+    func torrentFileStatus(_ record: TaskRecord) async -> (files: [TorrentInfo.FileEntry], progress: [Double])? {
+        guard record.kind == "torrent",
+              let hash = TorrentEngine.infoHash(taskId: record.taskId, url: record.url) else { return nil }
+        return await TorrentEngine.shared.fileStatus(hash)
     }
 
     // MARK: - Scheduling
@@ -370,7 +504,8 @@ final class TaskService {
         totalSpeed = httpTotal + torrentSpeeds.values.reduce(0, +)
         guard let index = taskIndex(taskId) else { return }
         tasks[index].fileSize = status.totalSize
-        tasks[index].receivedBytes = status.totalDownloaded
+        // totalDownloaded counts re-requested blocks too; scale by verified progress.
+        tasks[index].receivedBytes = Int64(status.progress * Double(status.totalSize))
         tasks[index].speed = Int64(status.downloadRate)
         tasks[index].peers = status.numPeers + status.numSeeds
     }
@@ -383,14 +518,15 @@ final class TaskService {
         tasks[index].speed = 0
         tasks[index].peers = 0
 
-        // Moves the finished product from BT staging into Documents: single file, or a folder for multi-file torrents.
+        // The product moves out of BT staging into Documents: a single file, or
+        // a folder holding the selected files of a multi-file torrent.
+        let record = tasks[index]
         let staging = Paths.appSupport
             .appending(path: "BTFiles", directoryHint: .isDirectory)
             .appending(path: taskId, directoryHint: .isDirectory)
-        let items = (try? FileManager.default.contentsOfDirectory(at: staging, includingPropertiesForKeys: nil)) ?? []
 
-        let productName = toSafeFilename(status.name.isEmpty ? tasks[index].name : status.name,
-                                         fallback: tasks[index].name)
+        let productName = toSafeFilename(status.name.isEmpty ? record.name : status.name,
+                                         fallback: record.name)
         let category = Category.match(productName)
         let folder = outputFolder(for: category)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -399,13 +535,17 @@ final class TaskService {
         try? FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
 
         do {
-            if items.count == 1, items[0].hasDirectoryPath == false {
+            if let files = status.files {
                 tasks[index].relativeFolder = usesCategoryFolders ? category.folder : ""
-                try FileManager.default.moveItem(at: items[0], to: destination)
+                try moveSelectedFiles(files: files, selection: record.selectedFiles,
+                                      from: staging, to: destination)
             } else {
-                let sourceFolder = items.first { $0.hasDirectoryPath } ?? staging
+                let items = (try? FileManager.default.contentsOfDirectory(at: staging, includingPropertiesForKeys: nil)) ?? []
+                guard let product = items.first else {
+                    throw DownloadError(message: String(localized: "Downloaded files are missing"))
+                }
                 tasks[index].relativeFolder = usesCategoryFolders ? category.folder : ""
-                try FileManager.default.moveItem(at: sourceFolder, to: destination)
+                try FileManager.default.moveItem(at: product, to: destination)
             }
         } catch {
             finishRun(taskId, status: .failed, message: "Move failed: \(error.localizedDescription)")
@@ -416,7 +556,39 @@ final class TaskService {
         tasks[index].categoryId = category.id
         try? FileManager.default.removeItem(at: staging)
         try? FileManager.default.removeItem(at: Paths.torrentBlob(taskId))
+        // The handle would keep "seeding" from the moved-away staging path; drop it.
+        let hash = status.infoHash
+        Task { await TorrentEngine.shared.remove(hash, deleteFiles: false) }
         finishRun(taskId, status: .completed, fileSize: max(status.totalSize, 0))
+    }
+
+    /// Moves the selected files into `destination`, creating subfolders as needed.
+    private func moveSelectedFiles(files: [TorrentInfo.FileEntry], selection: [Int]?,
+                                   from staging: URL, to destination: URL) throws {
+        let entries: [(path: String, length: Int64)]
+        if let selection {
+            entries = files.enumerated().filter { selection.contains($0.offset) }.map { ($0.element.path, $0.element.length) }
+        } else {
+            entries = files.map { ($0.path, $0.length) }
+        }
+        guard !entries.isEmpty else {
+            throw DownloadError(message: String(localized: "No files selected"))
+        }
+        // Multi-file torrents write under the torrent's name folder inside staging.
+        let torrentFolderName = files[0].path.split(separator: "/").first.map(String.init) ?? ""
+        let sourceRoot = staging.appending(path: torrentFolderName, directoryHint: .isDirectory)
+        for entry in entries {
+            let relative = torrentFolderName.isEmpty ? entry.path
+                : String(entry.path.dropFirst(torrentFolderName.count + 1))
+            let source = sourceRoot.appending(path: relative)
+            let target = destination.appending(path: relative)
+            try FileManager.default.createDirectory(at: target.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: target.path) {
+                try FileManager.default.removeItem(at: target)
+            }
+            try FileManager.default.moveItem(at: source, to: target)
+        }
     }
 
     private func finishRun(_ taskId: String, status: TaskStatus, fileSize: Int64? = nil, message: String = "") {
