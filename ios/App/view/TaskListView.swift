@@ -15,13 +15,12 @@ struct TaskListView: View {
     private var isRegular: Bool { sizeClass == .regular }
 
     var body: some View {
-        VStack(spacing: 0) {
+        Group {
             if tasks.isEmpty {
                 emptyState
             } else {
                 taskTable
             }
-            footerBar
         }
         .background(Color(.systemBackground))
         .sheet(item: $previewTask) { record in
@@ -30,7 +29,7 @@ struct TaskListView: View {
         }
         .sheet(item: $propertiesTask) { record in
             NavigationStack {
-                TaskPropertiesView(record: record)
+                TaskPropertiesView(record: record, service: service)
             }
             .presentationDetents([.medium, .large])
         }
@@ -90,23 +89,6 @@ struct TaskListView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color(.secondarySystemBackground))
-    }
-
-    private var footerBar: some View {
-        HStack(spacing: 16) {
-            Label(toDockSpeed(service.totalSpeed), systemImage: "arrow.down")
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(service.totalSpeed > 0 ? Color.accentColor : Color.secondary)
-            Spacer()
-            if let capacity = Paths.volumeCapacity() {
-                Label("\(toReadableSize(capacity.free)) free", systemImage: "internaldrive")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(.bar)
     }
 
     // MARK: - Row actions

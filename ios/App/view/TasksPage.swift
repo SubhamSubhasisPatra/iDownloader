@@ -27,6 +27,7 @@ enum TaskFilter: Hashable {
 
 struct TasksPage: View {
     let service: TaskService
+    @Binding var incomingDraft: TorrentDraft?
 
     @State private var filter: TaskFilter = .all
     @State private var searchText = ""
@@ -72,6 +73,9 @@ struct TasksPage: View {
         }
         .sheet(isPresented: $isAddPresented) {
             AddSheet(service: service)
+        }
+        .sheet(item: $incomingDraft) { draft in
+            AddSheet(service: service, initialDraft: draft)
         }
         .sheet(isPresented: $isSettingsPresented) {
             NavigationStack { SettingsPage(service: service) }
@@ -139,16 +143,37 @@ struct TasksPage: View {
             .navigationTitle(filter.title)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    statusMenu
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         isAddPresented = true
                     } label: {
-                        Label("Add URL", systemImage: "plus")
+                        Label("Add Download", systemImage: "plus")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     overflowMenu
                 }
             }
+    }
+
+    /// Live download speed and free disk space, replacing the old footer bar.
+    private var statusMenu: some View {
+        Menu {
+            LabeledContent("Download Speed", value: toDockSpeed(service.totalSpeed))
+            if let capacity = Paths.volumeCapacity() {
+                LabeledContent("Free Space", value: toReadableSize(capacity.free))
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "arrow.down")
+                Text(toDockSpeed(service.totalSpeed))
+                    .monospacedDigit()
+            }
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(service.totalSpeed > 0 ? Color.accentColor : Color.secondary)
+        }
     }
 
     private var overflowMenu: some View {
